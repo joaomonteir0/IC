@@ -1,22 +1,16 @@
-# Como compilar e executar
+# TUDO O QUE PRECISAS DE SABER
 
-## 1. Compilar o projeto
+## 1. Instalar as dependências
 
-No diretório onde o projeto está localizado, executa o comando `make`:
-
-```bash
-make
-```
-
-## 2. Executar o programa
-
-Após a compilação, podes correr o programa utilizando o comando:
+Antes de compilar o projeto, é necessário instalar a biblioteca SFML. Executa o seguinte comando:
 
 ```bash
-./audiodata_manipulation
+sudo apt-get install libsfml-dev
 ```
 
-ou
+## 2. Compilar e executar o projeto
+
+No diretório onde o projeto está localizado, executa o comando:
 
 ```bash
 make run
@@ -24,7 +18,7 @@ make run
 
 ## 3. Limpar os ficheiros de compilação (Opcional)
 
-Se desejas remover os ficheiros gerados durante a compilação, como o executável e outros ficheiros intermediários, podes usar o comando:
+Se queres remover os ficheiros gerados durante a compilação, como o executável e outros ficheiros intermediários, podes usar o comando:
 
 ```bash
 make clean
