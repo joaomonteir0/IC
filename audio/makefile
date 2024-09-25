@@ -6,7 +6,7 @@ SRC = audiodata_manipulation.cpp
 
 TARGET = audiodata_manipulation
 
-LIBS = -lsfml-audio -lsfml-system
+LIBS = -lsfml-audio -lsfml-system -lsfml-window -lsfml-graphics
 
 all: $(TARGET)
 

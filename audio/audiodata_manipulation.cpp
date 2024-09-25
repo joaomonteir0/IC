@@ -1,7 +1,9 @@
 #include <SFML/Audio.hpp>
+#include <SFML/Graphics.hpp>
 #include <iostream>
 #include <string>
 #include <iomanip> 
+#include <vector>
 
 int main() {
     sf::SoundBuffer buffer;
@@ -40,13 +42,43 @@ int main() {
     }
     std::cout << std::endl;
 
+    // new - start
+
+    sf::RenderWindow window(sf::VideoMode(1200, 600), "Waveform of Audio Sample");
+
+    sf::VertexArray waveform(sf::LinesStrip, sampleCount);
+
+    for (std::size_t i = 0; i < sampleCount; ++i) {
+        // x-axis represents time
+        float x = static_cast<float>(i) / sampleRate * window.getSize().x / duration.asSeconds();
+        // y-axis represents amplitude
+        float y = window.getSize().y / 2 - samples[i] / 32768.0f * window.getSize().y / 2;
+        waveform[i].position = sf::Vector2f(x, y);
+        waveform[i].color = sf::Color::White;
+    }
+
     sf::Sound sound;
     sound.setBuffer(buffer);
     sound.play();
 
-    while (sound.getStatus() == sf::Sound::Playing) {
-        sf::sleep(sf::seconds(0.1f));
+    while (window.isOpen()) {
+        sf::Event event;
+        while (window.pollEvent(event)) {
+            if (event.type == sf::Event::Closed) {
+                window.close();
+            }
+        }
+
+        window.clear();
+        window.draw(waveform);
+        window.display();
+
+        if (sound.getStatus() != sf::Sound::Playing) {
+            window.close();
+        }
     }
+
+    // new - end
 
     return 0;
 }
