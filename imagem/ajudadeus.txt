@@ -1,0 +1,11 @@
+pgm é a versão grayscale de ppm
+primeiro 3 bytes são o 1 pixel e consecutivamente... da esquerda para a direita
+rows x columns
+
+qd usamos o opencv o formato já vem numa estrutura de dados 
+chamado Mat
+nao há necessidade de usar uma estrutura diferente da do OPENCV
+vamos ver uma imagem cinzenta que cada ponto diz a qtd de cor(?)
+queremos partir daqui para chegar ao histograma
+[0, 255] quanto menos niveis tiver mais "clara" vai ficando a imagem
+temos de pegar na imagem processada e comparar com a original
