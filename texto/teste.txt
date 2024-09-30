@@ -1,1 +1,4 @@
-Dolor consectetur ex non magna excepteur laborum consectetur. Adipisicing mollit do adipisicing exercitation amet nisi. Dolore sint aute culpa voluptate consequat enim exercitation voluptate officia. Voluptate do sit nostrud voluptate in officia et culpa ullamco. Aute deserunt nostrud laboris enim incididunt reprehenderit anim eu elit consectetur non proident.
+Olá, mundo! Este é um teste de contagem de frequência de caracteres e palavras. 
+A linguagem C++ é poderosa, eficiente, e suporta múltiplos tipos de codificação, como UTF-8. 
+Vamos contar quantos "é" existem, e também "palavras".
+Caractere especial: ç, á, ê, ô, ü, ñ, ¿, ¡

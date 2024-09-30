@@ -2,7 +2,7 @@
 CC = g++
 
 # Compiler flags
-CFLAGS = -Wall -std=c++11
+CFLAGS = -Wall -std=c++17
 
 # Target executable
 TARGET = trab1
