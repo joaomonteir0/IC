@@ -23,15 +23,19 @@ std::string escolherImagem() {
 }
 
 void menu() {
-    std::cout << "Selecione uma opção:" << std::endl;
-    std::cout << "1 - Carregar imagem" << std::endl;
-    std::cout << "2 - Visualizar canais de cor & grayscale" << std::endl;
-    std::cout << "0 - Sair" << std::endl;
+    std::cout << "Select an option:" << std::endl;
+    std::cout << "1 - Load an imagem" << std::endl;
+    std::cout << "2 - Visualize the image RGB channels & grayscale" << std::endl;
+    std::cout << "3 - Visualize the grayscale histogram" << std::endl;
+    std::cout << "4 - Save the modified image" << std::endl;  // Implementar salvamento de imagens
+    std::cout << "5 - Convert the image to another format" << std::endl;  // Implementar conversão de formatos
+    std::cout << "6 - Apply a filter (e.g., grayscale, blur)" << std::endl;
+    std::cout << "0 - Leave" << std::endl;
 
     int op;
     std::cin >> op;
 
-    static ImageProcessor imgProc; // Persistent across menu calls
+    static ImageProcessor imgProc; // manter a imagem pelo menu
 
     switch (op) {
         case 1: {
@@ -42,11 +46,15 @@ void menu() {
                 std::cout << "Não foi possível carregar a imagem: " << image_path << std::endl;
                 return;
             }
-            imgProc.displayImage("Imagem Original");
+            imgProc.displayImage("Original");
             break;
         }
         case 2: {
             imgProc.displayChannels();  // Display color channels
+            break;
+        }
+        case 3: {
+            imgProc.displayHistogram(); // Display histogram
             break;
         }
         case 0:
