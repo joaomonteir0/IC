@@ -8,6 +8,7 @@
 #include <cmath>
 #include <filesystem>
 #include <algorithm>
+#include <fstream>
 
 std::string chosenFile;
 
@@ -119,32 +120,6 @@ void visualizeWaveform() {
 }
 
 // Função para criar histograma dos valores de amplitude (T3)
-void drawHistogram(sf::RenderWindow& window, const std::map<int, int>& histogram, const sf::Color& color, float offsetX, float offsetY, float width, float height) {
-    int maxCount = 0;
-    for (const auto& [bin, count] : histogram) {
-        if (count > maxCount) {
-            maxCount = count;
-        }
-    }
-
-    float binWidth = width / histogram.size();
-    int index = 0;
-
-    for (const auto& [bin, count] : histogram) {
-        float x = offsetX + index * binWidth;
-        float y = offsetY + height - (count / static_cast<float>(maxCount)) * height;
-        float barHeight = (count / static_cast<float>(maxCount)) * height;
-
-        sf::RectangleShape bar(sf::Vector2f(binWidth - 2, barHeight));
-        bar.setPosition(x, y);
-        bar.setFillColor(color);
-        
-        window.draw(bar);
-        index++;
-    }
-}
-
-
 std::map<int, int> createHistogram(const sf::Int16* samples, std::size_t sampleCount, unsigned int channelCount, int binSize) {
     std::map<int, int> histogram;
     for (std::size_t i = 0; i < sampleCount; i += channelCount) {
@@ -185,27 +160,25 @@ void createAmplitudeHistogram() {
         }
     }
 
-    sf::RenderWindow window(sf::VideoMode(1200, 800), "Histogram of Audio Amplitude");
-
-    while (window.isOpen()) {
-        sf::Event event;
-        while (window.pollEvent(event)) {
-            if (event.type == sf::Event::Closed) {
-                window.close();
-            }
-        }
-
-        window.clear();
-
-        drawHistogram(window, leftHistogram, sf::Color::Red, 50, 50, 500, 300);
-        if (channelCount == 2) {
-            drawHistogram(window, rightHistogram, sf::Color::Green, 650, 50, 500, 300);
-            drawHistogram(window, monoHistogram, sf::Color::Blue, 50, 400, 500, 300);
-            drawHistogram(window, sideHistogram, sf::Color::Yellow, 650, 400, 500, 300);
-        }
-
-        window.display();
+    // Salvar os dados do histograma em um arquivo
+    std::ofstream outFile("histogram_data.txt");
+    for (const auto& [bin, count] : leftHistogram) {
+        outFile << bin << " " << count << "\n";
     }
+    outFile.close();
+
+    // Criar um script do gnuplot
+    std::ofstream scriptFile("plot_histogram.gnuplot");
+    scriptFile << "set terminal png size 1200,800\n";
+    scriptFile << "set output 'histogram.png'\n";
+    scriptFile << "set title 'Histogram of Audio Amplitude'\n";
+    scriptFile << "set xlabel 'Amplitude Bin'\n";
+    scriptFile << "set ylabel 'Count'\n";
+    scriptFile << "plot 'histogram_data.txt' using 1:2 with boxes title 'Left Channel'\n";
+    scriptFile.close();
+
+    // Chamar o gnuplot para gerar o gráfico
+    system("gnuplot plot_histogram.gnuplot");
 }
 
 // Função para quantização uniforme do áudio (T4)
