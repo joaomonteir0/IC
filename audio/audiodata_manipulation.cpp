@@ -120,8 +120,6 @@ void visualizeWaveform() {
 
 // Função para criar histograma dos valores de amplitude (T3)
 void drawHistogram(sf::RenderWindow& window, const std::map<int, int>& histogram, const sf::Color& color, float offsetX, float offsetY, float width, float height) {
-    sf::VertexArray bars(sf::Lines, histogram.size() * 2);
-    int index = 0;
     int maxCount = 0;
     for (const auto& [bin, count] : histogram) {
         if (count > maxCount) {
@@ -129,18 +127,23 @@ void drawHistogram(sf::RenderWindow& window, const std::map<int, int>& histogram
         }
     }
 
-    for (const auto& [bin, count] : histogram) {
-        float x = offsetX + (bin + 32768) / 65536.0f * width;
-        float y = offsetY + height - (count / static_cast<float>(maxCount)) * height;
-        bars[index].position = sf::Vector2f(x, offsetY + height);
-        bars[index].color = color;
-        bars[index + 1].position = sf::Vector2f(x, y);
-        bars[index + 1].color = color;
-        index += 2;
-    }
+    float binWidth = width / histogram.size();
+    int index = 0;
 
-    window.draw(bars);
+    for (const auto& [bin, count] : histogram) {
+        float x = offsetX + index * binWidth;
+        float y = offsetY + height - (count / static_cast<float>(maxCount)) * height;
+        float barHeight = (count / static_cast<float>(maxCount)) * height;
+
+        sf::RectangleShape bar(sf::Vector2f(binWidth - 2, barHeight));
+        bar.setPosition(x, y);
+        bar.setFillColor(color);
+        
+        window.draw(bar);
+        index++;
+    }
 }
+
 
 std::map<int, int> createHistogram(const sf::Int16* samples, std::size_t sampleCount, unsigned int channelCount, int binSize) {
     std::map<int, int> histogram;
