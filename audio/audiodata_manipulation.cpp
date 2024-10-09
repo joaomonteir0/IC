@@ -13,11 +13,11 @@
 
 std::string chosenFile;
 
-// Função para listar arquivos na pasta 'audio_files' e permitir que o usuário escolha um arquivo
+// Função para listar arquivos na pasta 'audio_original' e permitir que o usuário escolha um arquivo
 void chooseAudioFile() {
     std::vector<std::string> files;
     std::cout << "Available audio files:\n";
-    for (const auto& entry : std::filesystem::directory_iterator("audio_files")) {
+    for (const auto& entry : std::filesystem::directory_iterator("audio_original")) {
         if (entry.path().extension() == ".wav") {
             files.push_back(entry.path().filename().string());
         }
@@ -40,7 +40,7 @@ void chooseAudioFile() {
         exit(1);
     }
 
-    chosenFile = "audio_files/" + files[choice - 1];
+    chosenFile = "audio_original/" + files[choice - 1];
     std::cout << "Chosen file: " << chosenFile << "\n";
 }
 
@@ -251,6 +251,15 @@ void quantizeAudio() {
 
     sf::SoundBuffer quantizedBuffer;
     quantizedBuffer.loadFromSamples(quantizedSamples.data(), sampleCount, channelCount, sampleRate);
+
+    std::filesystem::create_directory("audio_quantized");
+
+    std::string quantizedFileName = "audio_quantized/quantized_" + std::filesystem::path(chosenFile).filename().string();
+    if (!quantizedBuffer.saveToFile(quantizedFileName)) {
+        std::cerr << "Error saving quantized audio file: " << quantizedFileName << std::endl;
+        return;
+    }
+    std::cout << "Quantized audio file saved as: " << quantizedFileName << std::endl;
 
     sf::RenderWindow window(sf::VideoMode(1200, 600), "Waveform of Audio Sample");
 

@@ -16,6 +16,7 @@ $(TARGET): $(SRC)
 clean:
 	rm -f $(TARGET)
 	rm -f *.png
+	rm -f audio_quantized/quantized_*
 
 run: $(TARGET)
 	./$(TARGET)
