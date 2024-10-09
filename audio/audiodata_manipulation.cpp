@@ -57,7 +57,7 @@ void loadAudioFile() {
     unsigned int channelCount = buffer.getChannelCount();
     sf::Time duration = buffer.getDuration();
 
-    std::cout << "Audio file information:" << std::endl;
+    std::cout << "\nAudio file information:" << std::endl;
     std::cout << "Sample rate: " << sampleRate << " Hz" << std::endl;
     std::cout << "Number of channels: " << channelCount << std::endl;
     std::cout << "Duration: " << std::fixed << std::setprecision(2) << duration.asSeconds() << " seconds" << std::endl;
@@ -69,7 +69,7 @@ void loadAudioFile() {
     for (std::size_t i = 0; i < std::min(static_cast<std::size_t>(10), sampleCount); ++i) {
         std::cout << samples[i] << " ";
     }
-    std::cout << std::endl;
+    std::cout << "\n";
 }
 
 // Função para visualizar a forma de onda do áudio (T2)
@@ -333,7 +333,7 @@ void compareAudioSamples() {
     mse /= sampleCount;
     double snr = 10 * std::log10(signalPower / noisePower);
 
-    std::cout << "Mean Squared Error (MSE): " << mse << std::endl;
+    std::cout << "\nMean Squared Error (MSE): " << mse << std::endl;
     std::cout << "Signal-to-Noise Ratio (SNR): " << snr << " dB" << std::endl;
 }
 
@@ -360,7 +360,7 @@ void displayMenu() {
                 break;
             case 3:
                 createAmplitudeHistogram();
-                std::cout << "Histograms created and saved as .png files in the current directory." << std::endl;
+                std::cout << "\nHistograms created and saved as .png files in the current directory." << std::endl;
                 break;
             case 4:
                 quantizeAudio();
