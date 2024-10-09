@@ -15,6 +15,7 @@ $(TARGET): $(SRC)
 
 clean:
 	rm -f $(TARGET)
+	rm -f *.png
 
 run: $(TARGET)
 	./$(TARGET)

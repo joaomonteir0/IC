@@ -9,6 +9,7 @@
 #include <filesystem>
 #include <algorithm>
 #include <fstream>
+#include <cstdio>
 
 std::string chosenFile;
 
@@ -130,6 +131,17 @@ std::map<int, int> createHistogram(const sf::Int16* samples, std::size_t sampleC
     return histogram;
 }
 
+void writeGnuplotScript(const std::string& dataFile, const std::string& title, const std::string& outputFile) {
+    std::ofstream scriptFile(outputFile);
+    scriptFile << "set terminal png size 1200,800\n";
+    scriptFile << "set output '" << title << ".png'\n";
+    scriptFile << "set title 'Histogram of " << title << " Amplitude'\n";
+    scriptFile << "set xlabel 'Amplitude Bin'\n";
+    scriptFile << "set ylabel 'Count'\n";
+    scriptFile << "plot '" << dataFile << "' using 1:2 with boxes title '" << title << " Channel'\n";
+    scriptFile.close();
+}
+
 void createAmplitudeHistogram() {
     sf::SoundBuffer buffer;
 
@@ -160,25 +172,52 @@ void createAmplitudeHistogram() {
         }
     }
 
-    // Salvar os dados do histograma em um arquivo
-    std::ofstream outFile("histogram_data.txt");
+    // Salvar os dados do histograma em arquivos separados
+    std::ofstream leftFile("left_histogram_data.txt");
     for (const auto& [bin, count] : leftHistogram) {
-        outFile << bin << " " << count << "\n";
+        leftFile << bin << " " << count << "\n";
     }
-    outFile.close();
+    leftFile.close();
 
-    // Criar um script do gnuplot
-    std::ofstream scriptFile("plot_histogram.gnuplot");
-    scriptFile << "set terminal png size 1200,800\n";
-    scriptFile << "set output 'histogram.png'\n";
-    scriptFile << "set title 'Histogram of Audio Amplitude'\n";
-    scriptFile << "set xlabel 'Amplitude Bin'\n";
-    scriptFile << "set ylabel 'Count'\n";
-    scriptFile << "plot 'histogram_data.txt' using 1:2 with boxes title 'Left Channel'\n";
-    scriptFile.close();
+    std::ofstream rightFile("right_histogram_data.txt");
+    for (const auto& [bin, count] : rightHistogram) {
+        rightFile << bin << " " << count << "\n";
+    }
+    rightFile.close();
 
-    // Chamar o gnuplot para gerar o gráfico
-    system("gnuplot plot_histogram.gnuplot");
+    std::ofstream monoFile("mono_histogram_data.txt");
+    for (const auto& [bin, count] : monoHistogram) {
+        monoFile << bin << " " << count << "\n";
+    }
+    monoFile.close();
+
+    std::ofstream sideFile("side_histogram_data.txt");
+    for (const auto& [bin, count] : sideHistogram) {
+        sideFile << bin << " " << count << "\n";
+    }
+    sideFile.close();
+
+    // Criar scripts do gnuplot para cada gráfico
+    writeGnuplotScript("left_histogram_data.txt", "Left Channel", "plot_left_histogram.gnuplot");
+    writeGnuplotScript("right_histogram_data.txt", "Right Channel", "plot_right_histogram.gnuplot");
+    writeGnuplotScript("mono_histogram_data.txt", "Mono Channel", "plot_mono_histogram.gnuplot");
+    writeGnuplotScript("side_histogram_data.txt", "Side Channel", "plot_side_histogram.gnuplot");
+
+    // Chamar o gnuplot para gerar os gráficos
+    system("gnuplot plot_left_histogram.gnuplot");
+    system("gnuplot plot_right_histogram.gnuplot");
+    system("gnuplot plot_mono_histogram.gnuplot");
+    system("gnuplot plot_side_histogram.gnuplot");
+
+    // Remover arquivos temporários
+    std::remove("left_histogram_data.txt");
+    std::remove("right_histogram_data.txt");
+    std::remove("mono_histogram_data.txt");
+    std::remove("side_histogram_data.txt");
+    std::remove("plot_left_histogram.gnuplot");
+    std::remove("plot_right_histogram.gnuplot");
+    std::remove("plot_mono_histogram.gnuplot");
+    std::remove("plot_side_histogram.gnuplot");
 }
 
 // Função para quantização uniforme do áudio (T4)
@@ -321,6 +360,7 @@ void displayMenu() {
                 break;
             case 3:
                 createAmplitudeHistogram();
+                std::cout << "Histograms created and saved as .png files in the current directory." << std::endl;
                 break;
             case 4:
                 quantizeAudio();
