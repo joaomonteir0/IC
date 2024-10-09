@@ -125,7 +125,7 @@ std::map<int, int> createHistogram(const sf::Int16* samples, std::size_t sampleC
     std::map<int, int> histogram;
     for (std::size_t i = 0; i < sampleCount; i += channelCount) {
         int sample = samples[i];
-        int bin = (sample + 32768) / binSize;
+        int bin = sample / binSize;
         histogram[bin]++;
     }
     return histogram;
@@ -167,33 +167,33 @@ void createAmplitudeHistogram() {
             int rightSample = samples[i + 1];
             int monoSample = (leftSample + rightSample) / 2;
             int sideSample = (leftSample - rightSample) / 2;
-            monoHistogram[(monoSample + 32768) / binSize]++;
-            sideHistogram[(sideSample + 32768) / binSize]++;
+            monoHistogram[monoSample / binSize]++;
+            sideHistogram[sideSample / binSize]++;
         }
     }
 
     // Salvar os dados do histograma em arquivos separados
     std::ofstream leftFile("left_histogram_data.txt");
     for (const auto& [bin, count] : leftHistogram) {
-        leftFile << bin << " " << count << "\n";
+        leftFile << bin * binSize << " " << count << "\n";
     }
     leftFile.close();
 
     std::ofstream rightFile("right_histogram_data.txt");
     for (const auto& [bin, count] : rightHistogram) {
-        rightFile << bin << " " << count << "\n";
+        rightFile << bin * binSize << " " << count << "\n";
     }
     rightFile.close();
 
     std::ofstream monoFile("mono_histogram_data.txt");
     for (const auto& [bin, count] : monoHistogram) {
-        monoFile << bin << " " << count << "\n";
+        monoFile << bin * binSize << " " << count << "\n";
     }
     monoFile.close();
 
     std::ofstream sideFile("side_histogram_data.txt");
     for (const auto& [bin, count] : sideHistogram) {
-        sideFile << bin << " " << count << "\n";
+        sideFile << bin * binSize << " " << count << "\n";
     }
     sideFile.close();
 
