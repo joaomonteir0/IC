@@ -2,7 +2,7 @@ CXX = g++
 CXXFLAGS = -Wall -std=c++17
 
 # Lista de arquivos objetos
-OBJ = trab1.o
+OBJ = trab1.o histogram.o
 
 # Nome do executável
 EXEC = trab1
