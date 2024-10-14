@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <fstream>
 #include <cstdio>
+#include <chrono>
 
 std::string chosenFile;
 
@@ -245,9 +246,15 @@ void quantizeAudio() {
     int levels = std::pow(2, bits);
     int step = 65536 / levels;
 
+    auto start = std::chrono::high_resolution_clock::now();
+
     for (std::size_t i = 0; i < sampleCount; ++i) {
         quantizedSamples[i] = (samples[i] / step) * step;
     }
+
+    auto end = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> elapsed = end - start;
+    std::cout << "\nQuantization took: " << elapsed.count() << " seconds" << std::endl;
 
     sf::SoundBuffer quantizedBuffer;
     quantizedBuffer.loadFromSamples(quantizedSamples.data(), sampleCount, channelCount, sampleRate);
