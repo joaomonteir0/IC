@@ -9,3 +9,18 @@ vamos ver uma imagem cinzenta que cada ponto diz a qtd de cor(?)
 queremos partir daqui para chegar ao histograma
 [0, 255] quanto menos niveis tiver mais "clara" vai ficando a imagem
 temos de pegar na imagem processada e comparar com a original
+
+Task: Apply Gaussian Filters (T4)
+For T4, your task is to apply Gaussian blur filters with different kernel sizes to the loaded image using OpenCV. A Gaussian filter smooths the image by averaging pixel values with their neighbors based on a Gaussian function. The size of the kernel defines the region that contributes to the average.
+
+Explanation:
+Gaussian Filter: This is a type of low-pass filter used to reduce noise or detail in an image.
+Kernel Size: The kernel is a matrix of odd dimensions (e.g., 3x3, 5x5). Larger kernels result in more blurring. Typically, a user can select the kernel size. A kernel size of 3x3 applies minimal blurring, while larger sizes like 7x7 or 9x9 introduce more.
+Sigma (σ): This parameter controls the degree of blurring. Larger σ values result in stronger blurring.
+To make the kernel size user-configurable, we will prompt the user for the size before applying the filter.
+
+Steps:
+Add an option to the menu to apply a Gaussian filter.
+Prompt the user for the kernel size before applying the filter.
+Use OpenCV's cv::GaussianBlur function to apply the Gaussian filter.
+Display the blurred image using OpenCV.
