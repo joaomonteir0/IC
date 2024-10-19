@@ -1,9 +1,9 @@
 #include <opencv2/opencv.hpp>
 #include <iostream>
 #include <vector>
-#include <fstream>
 #include <string>
-#include <cstdlib>  // For system()
+#include <fstream>
+#include <cstdio>  // For popen and pclose
 
 class ImageProcessor {
 private:
@@ -14,7 +14,7 @@ public:
     bool loadImage(const std::string &imagePath) {
         img = cv::imread(imagePath);  // Load the image using OpenCV
         if (img.empty()) {            // Check if the image was loaded correctly
-            std::cerr << "Erro: Imagem vazia." << std::endl;
+            std::cerr << "Error: Image is empty." << std::endl;
             return false;
         }
         return true;
@@ -23,7 +23,7 @@ public:
     // Function to calculate the histogram of a grayscale image
     std::vector<int> calculateHistogram() {
         if (img.empty()) {
-            std::cerr << "Imagem não carregada." << std::endl;
+            std::cerr << "Image not loaded." << std::endl;
             return std::vector<int>(256, 0);  // Return empty histogram
         }
 
@@ -49,67 +49,74 @@ public:
         return histogram;
     }
 
-    // Function to save the histogram data to a file for Gnuplot
-    void saveHistogramToFile(const std::vector<int>& histogram, const std::string& filename) {
-        std::ofstream outFile(filename);
-        if (!outFile.is_open()) {
-            std::cerr << "Erro ao abrir o arquivo para salvar o histograma." << std::endl;
+    // Function to plot the histogram using Gnuplot via a pipe
+    void plotHistogramWithGnuplot(const std::vector<int>& histogram) {
+        // Open a pipe to Gnuplot
+        FILE* gnuplotPipe = popen("gnuplot -persistent", "w");
+        if (!gnuplotPipe) {
+            std::cerr << "Error: Could not open pipe to Gnuplot." << std::endl;
             return;
         }
 
-        // Write the histogram data to the file
+        // Write Gnuplot commands directly to the pipe
+        fprintf(gnuplotPipe, "set terminal pngcairo size 800,600 enhanced font 'Verdana,10'\n");
+        fprintf(gnuplotPipe, "set output 'histogram.png'\n");
+        fprintf(gnuplotPipe, "set title 'Grayscale Histogram'\n");
+        fprintf(gnuplotPipe, "set xlabel 'Intensity'\n");
+        fprintf(gnuplotPipe, "set ylabel 'Frequency'\n");
+        fprintf(gnuplotPipe, "set boxwidth 0.9 relative\n");
+        fprintf(gnuplotPipe, "set style fill solid 1.0\n");
+        fprintf(gnuplotPipe, "set yrange [0:*]\n");
+        fprintf(gnuplotPipe, "plot '-' using 1:2 with boxes lc rgb 'blue' notitle\n");
+
+        // Send the histogram data to Gnuplot
         for (int i = 0; i < 256; ++i) {
-            outFile << i << " " << histogram[i] << "\n";  // Intensity value and its frequency
+            fprintf(gnuplotPipe, "%d %d\n", i, histogram[i]);
         }
 
-        outFile.close();
+        // Tell Gnuplot that the data is finished
+        fprintf(gnuplotPipe, "e\n");
+
+        // Close the Gnuplot pipe
+        pclose(gnuplotPipe);
+
+        std::cout << "Histogram generated: histogram.png" << std::endl;
     }
 
-    void generateGnuplotScript(const std::string& dataFile, const std::string& scriptFile, const std::string& outputFile) {
-        std::ofstream script(scriptFile);
-        if (!script.is_open()) {
-            std::cerr << "Erro ao criar o arquivo de script do Gnuplot." << std::endl;
+    // Function to generate the histogram with Gnuplot
+    void plotHistogramImage() {
+        std::vector<int> histogram = calculateHistogram();
+        plotHistogramWithGnuplot(histogram);
+    }
+
+    // Function to apply Gaussian filter and display original and filtered image
+    void applyGaussianFilter(int kernelSize) {
+        if (img.empty()) {
+            std::cerr << "Error: No image loaded." << std::endl;
             return;
         }
 
-        script << "set terminal pngcairo size 800,600 enhanced font 'Verdana,10'\n";
-        script << "set output '" << outputFile << "'\n";
-        script << "set title 'Grayscale Histogram'\n";
-        script << "set xlabel 'Intensity'\n";
-        script << "set ylabel 'Frequency'\n";
-        script << "set boxwidth 0.9 relative\n";  // Ajusta a largura da barra
-        script << "set style fill solid 1.0\n";   // Barras sólidas
-        script << "set yrange [0:*]\n";           // Ajusta automaticamente o eixo Y
-        // Para definir manualmente o intervalo do eixo Y, substitua a linha acima por:
-        // script << "set yrange [0:5000]\n";     // Limite manual do eixo Y
-        script << "plot '" << dataFile << "' using 1:2 with boxes lc rgb 'blue' notitle\n";
+        // Ensure kernel size is odd and >= 3
+        if (kernelSize % 2 == 0) {
+            kernelSize += 1;  // Convert even to odd
+        }
+        if (kernelSize < 3) {
+            kernelSize = 3;  // Minimum kernel size
+        }
 
-        script.close();
-    }
+        cv::Mat blurredImage;
+        cv::GaussianBlur(img, blurredImage, cv::Size(kernelSize, kernelSize), 0);
 
-    // Function to run Gnuplot to generate the histogram
-    void plotHistogramWithGnuplot() {
-        // Step 1: Calculate the histogram
-        std::vector<int> histogram = calculateHistogram();
+        // Display the original image
+        cv::imshow("Original Image", img);
 
-        // Step 2: Save the histogram data to a file
-        std::string dataFile = "histogram_data.txt";
-        saveHistogramToFile(histogram, dataFile);
+        // Display the blurred image
+        cv::imshow("Gaussian Blurred Image", blurredImage);
+        cv::waitKey(0);  // Wait for the user to close the window
 
-        // Step 3: Generate the Gnuplot script
-        std::string scriptFile = "plot_histogram.gnuplot";
-        std::string outputFile = "histogram.png";
-        generateGnuplotScript(dataFile, scriptFile, outputFile);
-
-        // Step 4: Call Gnuplot to execute the script
-        std::string command = "gnuplot " + scriptFile;
-        system(command.c_str());
-
-        std::cout << "Histograma gerado: " << outputFile << std::endl;
-
-        // Optional: Clean up temporary files
-        // remove(dataFile.c_str());
-        // remove(scriptFile.c_str());
+        // Save the blurred image
+        std::string outputFile = "blurred_image.png";
+        cv::imwrite(outputFile, blurredImage);
+        std::cout << "Blurred image saved: " << outputFile << std::endl;
     }
 };
-
