@@ -1,155 +1,57 @@
 #include "histogram.h"
 #include <SFML/Graphics.hpp>
 #include <iostream>
+#include <locale>
+#include <codecvt>
+#include <fstream>
+#include <map>
 
-using namespace std;
-
-void saveScreenshot(sf::RenderWindow& window, const std::string& filename) {
-    // Captura a tela da janela
-    sf::Texture texture;
-    texture.create(window.getSize().x, window.getSize().y);
-    texture.update(window);
-
-    // Cria um arquivo de imagem
-    if (!texture.copyToImage().saveToFile(filename)) {
-        cerr << "Erro ao salvar a imagem: " << filename << endl;
-    } else {
-        cout << "Imagem salva como: " << filename << endl;
+void createHistogramFromCharacterFrequencies(const std::map<wchar_t, int>& freqMap, const std::string& filename) {
+    std::ofstream outFile(filename);
+    for (const auto& [ch, freq] : freqMap) {
+        outFile << "'" << static_cast<char>(ch) << "' " << freq << "\n";
     }
+    outFile.close();
 }
 
-void displayCharacterHistogram(const std::map<wchar_t, int>& histogram) {
-    sf::RenderWindow window(sf::VideoMode(1800, 600), "Histograma de Caracteres");
-    window.clear(sf::Color::White);
-
-    int barWidth = 30;
-    int maxCount = 0;
-
-    // Encontrar o valor máximo
-    for (const auto& pair : histogram) {
-        if (pair.second > maxCount) {
-            maxCount = pair.second;
-        }
-    }
-
-    int x = 50; // Posição inicial das barras
-    for (const auto& pair : histogram) {
-        float barHeight = (static_cast<float>(pair.second) / maxCount) * 400; // Normaliza a altura
-        sf::RectangleShape bar(sf::Vector2f(barWidth, barHeight));
-        bar.setFillColor(sf::Color(169, 169, 169)); // Cinza
-        bar.setPosition(x, 500 - barHeight); // Posição da barra
-        window.draw(bar);
-
-        // Adiciona texto acima da barra para a contagem
-        sf::Font font;
-        if (!font.loadFromFile("arial.ttf")) {
-            // Lidar com erro ao carregar fonte
-            return;
-        }
-
-        sf::Text countText;
-        countText.setFont(font);
-        countText.setString(std::to_string(pair.second)); // Contagem
-        countText.setCharacterSize(15);
-        countText.setFillColor(sf::Color::Black);
-        countText.setPosition(x, 500 - barHeight - 20); // Posição do texto da contagem
-        window.draw(countText);
-
-        // Adiciona texto abaixo da barra para o caractere
-        sf::Text charText;
-        charText.setFont(font);
-        charText.setString(std::wstring(1, pair.first)); // Caractere
-        charText.setCharacterSize(15);
-        charText.setFillColor(sf::Color::Black);
-        charText.setPosition(x, 510); // Posição do texto do caractere
-        window.draw(charText);
-
-        x += barWidth + 10; // Espaçamento entre as barras
-    }
-
-    window.display();
-
-    // Salvar a imagem do histograma de caracteres
-    saveScreenshot(window, "character_histogram.png");
-
-    // Espera até que a janela seja fechada
-    sf::Event event;
-    while (window.isOpen()) {
-        while (window.pollEvent(event)) {
-            if (event.type == sf::Event::Closed)
-                window.close();
-        }
-    }
+std::string convertWStringToString(const std::wstring& wstr) {
+    std::wstring_convert<std::codecvt_utf8<wchar_t>> converter;
+    return converter.to_bytes(wstr);
 }
 
-void displayWordHistogram(const std::map<wstring, int>& freqMap) {
-    int barWidth = 40; // Largura da barra
-    int spacing = 5;  // Espaçamento entre as barras
-    int numBars = freqMap.size(); // Número total de barras
-    int windowWidth = 1800 + (numBars * (barWidth + spacing)); // Largura da janela baseada nas barras
-    int windowHeight = 600; // Altura da janela
-
-    sf::RenderWindow window(sf::VideoMode(windowWidth, windowHeight), "Histograma de Palavras");
-    window.clear(sf::Color::White);
-
-    int maxCount = 0;
-
-    // Encontrar o valor máximo
-    for (const auto& pair : freqMap) {
-        if (pair.second > maxCount) {
-            maxCount = pair.second;
-        }
+void createHistogramFromWordFrequencies(const std::map<std::wstring, int>& freqMap, const std::string& filename) {
+    std::ofstream outFile(filename);
+    for (const auto& [word, freq] : freqMap) {
+        outFile << convertWStringToString(word) << " " << freq << "\n";
     }
+    outFile.close();
+}
 
-    int x = 50; // Posição inicial das barras
-    for (const auto& pair : freqMap) {
-        float barHeight = (static_cast<float>(pair.second) / maxCount) * 400; // Normaliza a altura
-        sf::RectangleShape bar(sf::Vector2f(barWidth, barHeight));
-        bar.setFillColor(sf::Color(100, 149, 237)); // Azul
-        bar.setPosition(x, 500 - barHeight); // Posição da barra
-        window.draw(bar);
+void writeGnuplotScriptForWords(const std::string& dataFile, const std::string& title, const std::string& outputFile) {
+    std::ofstream scriptFile(outputFile);
+    scriptFile << "set terminal png size 1980,800\n";
+    scriptFile << "set output '" << title << ".png'\n";
+    scriptFile << "set title '" << title << "'\n";
+    scriptFile << "set xlabel 'Palavras'\n";
+    scriptFile << "set ylabel 'Frequência'\n";
+    scriptFile << "set style fill solid 1.0\n";
+    scriptFile << "set boxwidth 0.8\n";
+    scriptFile << "set xtics rotate by -45\n";
+    scriptFile << "set yrange [0:*]\n";
+    scriptFile << "plot '" << dataFile << "' using 2:xtic(1) with boxes lc rgb 'blue' title '" << title << "'\n";
+    scriptFile.close();
+}
 
-        // Adiciona texto acima da barra para a contagem
-        sf::Font font;
-        if (!font.loadFromFile("arial.ttf")) {
-            // Lidar com erro ao carregar fonte
-            return;
-        }
-
-        sf::Text countText;
-        countText.setFont(font);
-        countText.setString(std::to_string(pair.second)); // Contagem
-        countText.setCharacterSize(15);
-        countText.setFillColor(sf::Color::Black);
-        countText.setPosition(x + (barWidth / 2) - 10, 500 - barHeight - 20); // Centralizar o texto da contagem
-        window.draw(countText);
-
-        // Adiciona texto abaixo da barra para a palavra
-        sf::Text wordText;
-        wordText.setFont(font);
-        wordText.setString(pair.first); // Palavra
-        wordText.setCharacterSize(10);
-        wordText.setFillColor(sf::Color::Black);
-
-        // Posiciona a palavra centralizada em relação à barra
-        float wordWidth = wordText.getGlobalBounds().width;
-        wordText.setPosition(x + (barWidth / 2) - (wordWidth / 2), 510); // Centraliza a palavra
-        window.draw(wordText);
-
-        x += barWidth + spacing; // Espaçamento entre as barras
-    }
-
-    window.display();
-
-    // Salvar a imagem do histograma de palavras
-    saveScreenshot(window, "word_histogram.png");
-
-    // Espera até que a janela seja fechada
-    sf::Event event;
-    while (window.isOpen()) {
-        while (window.pollEvent(event)) {
-            if (event.type == sf::Event::Closed)
-                window.close();
-        }
-    }
+void writeGnuplotScriptForCharacters(const std::string& dataFile, const std::string& title, const std::string& outputFile) {
+    std::ofstream scriptFile(outputFile);
+    scriptFile << "set terminal png size 1980,800\n";
+    scriptFile << "set output '" << title << ".png'\n";
+    scriptFile << "set title '" << title << "'\n";
+    scriptFile << "set xlabel 'Caracteres'\n";
+    scriptFile << "set ylabel 'Frequência'\n";
+    scriptFile << "set style fill solid 1.0\n";
+    scriptFile << "set boxwidth 0.8\n";
+    scriptFile << "set xtics rotate by -45\n";
+    scriptFile << "plot '" << dataFile << "' using 2:xtic(1) with boxes lc rgb 'blue' title '" << title << "'\n";
+    scriptFile.close();
 }
