@@ -1,29 +1,22 @@
-# Compiler
-CC = g++
+CXX = g++
+CXXFLAGS = -Wall -std=c++17
 
-# Compiler flags
-CFLAGS = -Wall -std=c++17
+# Lista de arquivos objetos
+OBJ = trab1.o histogram.o
 
-# Target executable
-TARGET = trab1
+# Nome do executável
+EXEC = trab1
 
-# Source files
-SRCS = trab1.cpp
+# Adicione as bibliotecas SFML e a linkagem da filesystem ao comando de linkagem
+LDFLAGS = -lsfml-graphics -lsfml-window -lsfml-system -lstdc++fs
 
-# Object files
-OBJS = $(SRCS:.cpp=.o)
+all: $(EXEC)
 
-# Default target
-all: $(TARGET)
+$(EXEC): $(OBJ)
+	$(CXX) $(OBJ) -o $(EXEC) $(LDFLAGS)
 
-# Compile the executable
-$(TARGET): $(OBJS)
-	$(CC) $(CFLAGS) -o $(TARGET) $(OBJS)
-
-# Compile the object files
 %.o: %.cpp
-	$(CC) $(CFLAGS) -c $< -o $@
+	$(CXX) $(CXXFLAGS) -c $< -o $@
 
-# Clean up
 clean:
-	rm -f $(OBJS) $(TARGET)
+	rm -f $(OBJ) $(EXEC)

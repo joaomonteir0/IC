@@ -1,4 +1,0 @@
-Olá, mundo! Este é um teste de contagem de frequência de caracteres e palavras. 
-A linguagem C++ é poderosa, eficiente, e suporta múltiplos tipos de codificação, como UTF-8. 
-Vamos contar quantos "é" existem, e também "palavras".
-Caractere especial: ç, á, ê, ô, ü, ñ, ¿, ¡
