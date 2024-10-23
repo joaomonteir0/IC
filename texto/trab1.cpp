@@ -146,7 +146,7 @@ int menu() {
 int main() {
     locale::global(locale(""));
 
-    string folderPath = "pt";
+    string folderPath = "en";
     wstring allText = readAllFilesFromFolder(folderPath);
 
     if (allText.empty()) {
@@ -228,15 +228,12 @@ int main() {
             case 7:
                 wcout << L"\nGerando histogramas..." << endl;
 
-                // Gerar histograma para caracteres
                 createHistogramFromCharacterFrequencies(frequencyMap, "caracteres_histogram_data.txt");
                 writeGnuplotScriptForCharacters("caracteres_histogram_data.txt", "Histograma de Caracteres", "plot_caracteres_histogram.gnuplot");
 
-                // Gerar histograma para palavras
                 createHistogramFromWordFrequencies(wordFrequencyMap, "words_histogram_data.txt");
                 writeGnuplotScriptForWords("words_histogram_data.txt", "Histograma de Palavras", "plot_words_histogram.gnuplot");
 
-                // Executar gnuplot para gerar os gráficos
                 system("gnuplot plot_caracteres_histogram.gnuplot");
                 system("gnuplot plot_words_histogram.gnuplot");
 
