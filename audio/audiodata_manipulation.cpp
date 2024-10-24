@@ -12,7 +12,14 @@
 #include <cstdio>
 #include <chrono>
 
+// Variáveis globais
 std::string chosenFile;
+sf::SoundBuffer buffer;
+unsigned int sampleRate;
+unsigned int channelCount;
+sf::Time duration;
+const sf::Int16* samples;
+std::size_t sampleCount;
 
 // Função para listar arquivos na pasta 'audio_original' e permitir que o usuário escolha um arquivo
 void chooseAudioFile() {
@@ -43,28 +50,26 @@ void chooseAudioFile() {
 
     chosenFile = "audio_original/" + files[choice - 1];
     std::cout << "Chosen file: " << chosenFile << "\n";
+
+    if (!buffer.loadFromFile(chosenFile)) {
+        std::cerr << "Error loading audio file: " << chosenFile << std::endl;
+        exit(1);
+    }
+
+    // Inicializar as variáveis globais
+    sampleRate = buffer.getSampleRate();
+    channelCount = buffer.getChannelCount();
+    duration = buffer.getDuration();
+    samples = buffer.getSamples();
+    sampleCount = buffer.getSampleCount();
 }
 
 // Função para carregar e exibir informações básicas do arquivo de áudio (T1)
 void loadAudioFile() {
-    sf::SoundBuffer buffer;
-
-    if (!buffer.loadFromFile(chosenFile)) {
-        std::cerr << "Error loading audio file: " << chosenFile << std::endl;
-        return;
-    }
-
-    unsigned int sampleRate = buffer.getSampleRate();
-    unsigned int channelCount = buffer.getChannelCount();
-    sf::Time duration = buffer.getDuration();
-
     std::cout << "\nAudio file information:" << std::endl;
     std::cout << "Sample rate: " << sampleRate << " Hz" << std::endl;
     std::cout << "Number of channels: " << channelCount << std::endl;
     std::cout << "Duration: " << std::fixed << std::setprecision(2) << duration.asSeconds() << " seconds" << std::endl;
-
-    const sf::Int16* samples = buffer.getSamples();
-    std::size_t sampleCount = buffer.getSampleCount();
 
     std::cout << "First 10 raw audio samples: ";
     for (std::size_t i = 0; i < std::min(static_cast<std::size_t>(10), sampleCount); ++i) {
@@ -75,21 +80,7 @@ void loadAudioFile() {
 
 // Função para visualizar a forma de onda do áudio (T2)
 void visualizeWaveform() {
-    sf::SoundBuffer buffer;
-
-    if (!buffer.loadFromFile(chosenFile)) {
-        std::cerr << "Error loading audio file: " << chosenFile << std::endl;
-        return;
-    }
-
-    unsigned int sampleRate = buffer.getSampleRate();
-    sf::Time duration = buffer.getDuration();
-
-    const sf::Int16* samples = buffer.getSamples();
-    std::size_t sampleCount = buffer.getSampleCount();
-
     sf::RenderWindow window(sf::VideoMode(1200, 600), "Waveform of Audio Sample");
-
     sf::VertexArray waveform(sf::LinesStrip, sampleCount);
 
     for (std::size_t i = 0; i < sampleCount; ++i) {
@@ -144,20 +135,7 @@ void writeGnuplotScript(const std::string& dataFile, const std::string& title, c
 }
 
 void createAmplitudeHistogram() {
-    sf::SoundBuffer buffer;
-
-    if (!buffer.loadFromFile(chosenFile)) {
-        std::cerr << "Error loading audio file: " << chosenFile << std::endl;
-        return;
-    }
-
-    unsigned int channelCount = buffer.getChannelCount();
-
-    const sf::Int16* samples = buffer.getSamples();
-    std::size_t sampleCount = buffer.getSampleCount();
-
     int binSize = 256;
-
     std::map<int, int> leftHistogram = createHistogram(samples, sampleCount, 1, binSize);
     std::map<int, int> rightHistogram, monoHistogram, sideHistogram;
 
@@ -223,20 +201,6 @@ void createAmplitudeHistogram() {
 
 // Função para quantização uniforme do áudio (T4)
 void quantizeAudio() {
-    sf::SoundBuffer buffer;
-
-    if (!buffer.loadFromFile(chosenFile)) {
-        std::cerr << "Error loading audio file: " << chosenFile << std::endl;
-        return;
-    }
-
-    unsigned int sampleRate = buffer.getSampleRate();
-    unsigned int channelCount = buffer.getChannelCount();
-    sf::Time duration = buffer.getDuration();
-
-    const sf::Int16* samples = buffer.getSamples();
-    std::size_t sampleCount = buffer.getSampleCount();
-
     std::vector<sf::Int16> quantizedSamples(sampleCount);
 
     int bits;
@@ -312,16 +276,6 @@ void quantizeAudio() {
 
 // Função para calcular MSE e SNR entre amostras de áudio (T5)
 void compareAudioSamples() {
-    sf::SoundBuffer buffer;
-
-    if (!buffer.loadFromFile(chosenFile)) {
-        std::cerr << "Error loading audio file: " << chosenFile << std::endl;
-        return;
-    }
-
-    const sf::Int16* samples = buffer.getSamples();
-    std::size_t sampleCount = buffer.getSampleCount();
-
     std::vector<sf::Int16> quantizedSamples(sampleCount);
 
     int bits;
