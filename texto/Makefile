@@ -20,3 +20,7 @@ $(EXEC): $(OBJ)
 
 clean:
 	rm -f $(OBJ) $(EXEC)
+	rm -f *.png
+
+run: $(EXEC)
+	./$(EXEC)	

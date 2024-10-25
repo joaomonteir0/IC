@@ -1,25 +1,83 @@
-# TUDO O QUE PRECISAS DE SABER
+# IC - Project 1
 
-## 1. Instalar as dependências
+## O projeto está dividido em três partes principais: manipulação de dados de texto, manipulação de dados de áudio e processamento de imagens. Cada parte tem a sua própria pasta relativa e requer a instalação de diferentes bibliotecas.
 
-Antes de compilar o projeto, é necessário instalar a biblioteca SFML. Executa o seguinte comando:
+## Instalar as dependências
+
+### 1.1. Manipulação de Dados de Texto e Áudio
+
+Para a manipulação de dados de texto, é necessário instalar a biblioteca SFML. Executa o seguinte comando:
 
 ```bash
 sudo apt-get install libsfml-dev
 ```
 
-## 2. Compilar e executar o projeto
+### 1.2. Processamento de Imagens
 
-No diretório onde o projeto está localizado, executa o comando:
+Para o processamento de imagens, é necessário instalar a biblioteca OpenCV. Executa os seguintes comandos:
+
+```bash
+sudo apt-get install libopencv-dev
+```
+
+## Compilar e executar o projeto
+
+Cada parte do projeto tem o seu próprio diretório e pode ser compilada e executada separadamente.
+
+### 2.1. Manipulação de Dados de Texto
+
+No diretório texto, executa o comando:
 
 ```bash
 make run
 ```
 
-## 3. Limpar os ficheiros de compilação (Opcional)
+### 2.2. Manipulação de Dados de Áudio
+
+No diretório audio, executa o comando:
+
+```bash
+make run
+```
+
+### 2.3. Processamento de Imagens
+
+No diretório imagem, executa o comando:
+
+```bash
+make run
+```
+
+## Limpar os ficheiros de compilação (Opcional)
 
 Se queres remover os ficheiros gerados durante a compilação, como o executável e outros ficheiros intermediários, podes usar o comando:
+
+### 3.1. Manipulação de Dados de Texto
+
+No diretório texto, executa o comando:
 
 ```bash
 make clean
 ```
+
+### 3.2. Manipulação de Dados de Áudio
+
+No diretório audio, executa o comando:
+
+```bash
+make clean
+```
+
+### 3.3. Manipulação de Dados de Áudio
+
+No diretório imagem, executa o comando:
+
+```bash
+make clean
+```
+
+# Authors
+
+[João Monteiro](https://github.com/joaomonteir0), 102690 \
+[João Sousa](https://github.com/jsousa11), 103415 \
+[João Gaspar](https://github.com/joaogasparp), 107708 

@@ -229,10 +229,10 @@ int main() {
                 wcout << L"\nGerando histogramas..." << endl;
 
                 createHistogramFromCharacterFrequencies(frequencyMap, "caracteres_histogram_data.txt");
-                writeGnuplotScriptForCharacters("caracteres_histogram_data.txt", "Histograma de Caracteres", "plot_caracteres_histogram.gnuplot");
+                writeGnuplotScriptForCharacters("caracteres_histogram_data.txt", "histograma_de_caracteres", "plot_caracteres_histogram.gnuplot");
 
                 createHistogramFromWordFrequencies(wordFrequencyMap, "words_histogram_data.txt");
-                writeGnuplotScriptForWords("words_histogram_data.txt", "Histograma de Palavras", "plot_words_histogram.gnuplot");
+                writeGnuplotScriptForWords("words_histogram_data.txt", "histograma_de_palavras", "plot_words_histogram.gnuplot");
 
                 system("gnuplot plot_caracteres_histogram.gnuplot");
                 system("gnuplot plot_words_histogram.gnuplot");
