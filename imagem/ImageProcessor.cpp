@@ -2,8 +2,8 @@
 #include <iostream>
 #include <vector>
 #include <string>
-#include <cmath>  // For log10
-#include <cstdio>  // For popen and pclose
+#include <cmath>  
+#include <cstdio>
 
 class ImageProcessor {
 private:
@@ -52,6 +52,76 @@ public:
         cv::waitKey(0);  // Wait for user to close the window
     }
 
+    // Helper function to calculate MSE between two images
+    double calculateMSEBetween(const cv::Mat& img1, const cv::Mat& img2) {
+        if (img1.empty() || img2.empty() || img1.size() != img2.size() || img1.type() != img2.type()) {
+            std::cerr << "Error: Images are either empty or have different sizes/types." << std::endl;
+            return -1.0;
+        }
+
+        double mse = 0.0;
+        for (int y = 0; y < img1.rows; y++) {
+            for (int x = 0; x < img1.cols; x++) {
+                double diff = img1.at<uchar>(y, x) - img2.at<uchar>(y, x);
+                mse += diff * diff;
+            }
+        }
+        mse /= (double)(img1.total());
+        return mse;
+    }
+
+    // Helper function to calculate PSNR between two images
+    double calculatePSNRBetween(const cv::Mat& img1, const cv::Mat& img2) {
+        double mse = calculateMSEBetween(img1, img2);
+        if (mse == 0) {
+            return 100.0;  // Identical images
+        }
+
+        double psnr = 10.0 * log10((255 * 255) / mse);
+        return psnr;
+    }
+
+    // Function to perform uniform scalar quantization
+    void quantizeImage(int quantizationLevels) {
+        if (img.empty()) {
+            std::cerr << "Error: No image loaded." << std::endl;
+            return;
+        }
+
+        // Convert to grayscale
+        cv::Mat grayscale;
+        cv::cvtColor(img, grayscale, cv::COLOR_BGR2GRAY);
+
+        // Perform quantization
+        cv::Mat quantizedImg = grayscale.clone();
+        int levels = 256 / quantizationLevels;
+
+        for (int y = 0; y < quantizedImg.rows; y++) {
+            for (int x = 0; x < quantizedImg.cols; x++) {
+                int pixelValue = quantizedImg.at<uchar>(y, x);
+                int quantizedValue = (pixelValue / levels) * levels;
+                quantizedImg.at<uchar>(y, x) = quantizedValue;
+            }
+        }
+
+        // Display original and quantized images
+        cv::imshow("Original Grayscale Image", grayscale);
+        cv::imshow("Quantized Image", quantizedImg);
+        cv::waitKey(0);  // Wait for user to close the windows
+
+        // Save the quantized image
+        std::string outputFile = "quantized_image.png";
+        cv::imwrite(outputFile, quantizedImg);
+        std::cout << "Quantized image saved: " << outputFile << std::endl;
+
+        // Calculate and display MSE and PSNR between the grayscale and quantized images
+        double mse = calculateMSEBetween(grayscale, quantizedImg);
+        double psnr = calculatePSNRBetween(grayscale, quantizedImg);
+
+        std::cout << "MSE between original and quantized image: " << mse << std::endl;
+        std::cout << "PSNR between original and quantized image: " << psnr << " dB" << std::endl;
+    }
+
     // Function to display the image channels and grayscale
     void displayImageChannels() {
         if (img.empty()) {
@@ -63,17 +133,30 @@ public:
             std::vector<cv::Mat> channels;
             cv::split(img, channels);
 
+            // Display and save the Red, Green, and Blue channels
             cv::imshow("Red Channel", channels[2]);
             cv::imshow("Green Channel", channels[1]);
             cv::imshow("Blue Channel", channels[0]);
+
+            // Save the channels
+            cv::imwrite("red_channel.png", channels[2]);
+            cv::imwrite("green_channel.png", channels[1]);
+            cv::imwrite("blue_channel.png", channels[0]);
+
+            std::cout << "Red, Green, and Blue channels saved as red_channel.png, green_channel.png, and blue_channel.png." << std::endl;
         } else {
             std::cerr << "The image does not have multiple channels." << std::endl;
         }
 
+        // Convert the image to grayscale
         cv::Mat grayscale;
         cv::cvtColor(img, grayscale, cv::COLOR_BGR2GRAY);
+        
+        // Display and save the grayscale image
         cv::imshow("Grayscale Image", grayscale);
         cv::waitKey(0);  // Wait for user to close the window
+        cv::imwrite("grayscale_image.png", grayscale);
+        std::cout << "Grayscale image saved: grayscale_image.png" << std::endl;
     }
 
     // Function to calculate the histogram of a grayscale image

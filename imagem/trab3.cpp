@@ -10,7 +10,7 @@ void findImages(const std::string& caminho) {
     for (const auto& entry : std::filesystem::directory_iterator(caminho)) {
         if (entry.is_regular_file()) {
             std::string extensao = entry.path().extension().string();
-            if (extensao == ".ppm") {
+            if (extensao == ".ppm" || extensao == ".jpg" || extensao == ".png") {
                 std::cout << entry.path().filename().string() << std::endl;
             }
         }
@@ -20,15 +20,33 @@ void findImages(const std::string& caminho) {
 // choose an image
 std::string escolherImagem() {
     std::string imagemEscolhida;
-    std::cout << "Enter the image name (including the .ppm extension): ";
+    std::cout << "Enter the image name (including the extension): ";
     std::cin >> imagemEscolhida;
     return imagemEscolhida;
+}
+
+// Function to compare two images
+void compareImages(ImageProcessor& imgProc) {
+    findImages("./");
+    std::cout << "Select the first image:" << std::endl;
+    std::string caminhoImagem1 = escolherImagem();
+
+    findImages("./");
+    std::cout << "Select the second image:" << std::endl;
+    std::string caminhoImagem2 = escolherImagem();
+
+    if (!imgProc.loadImages(caminhoImagem1, caminhoImagem2)) {
+        std::cout << "Unable to load the images." << std::endl;
+        return;
+    }
+
+    imgProc.compareImages();  // Compare the two images
 }
 
 // handle the menu for image analysis and processing
 void mainMenuImage(ImageProcessor& imgProc) {
     int op;
-    
+
     while (true) {
         std::cout << "\nSelect an option:" << std::endl;
         std::cout << "1 - Load an image" << std::endl;
@@ -36,7 +54,8 @@ void mainMenuImage(ImageProcessor& imgProc) {
         std::cout << "3 - Display channels and grayscale" << std::endl;
         std::cout << "4 - Generate the histogram (Gnuplot)" << std::endl;
         std::cout << "5 - Apply Gaussian Filter" << std::endl;
-        std::cout << "6 - Return to the main menu" << std::endl;
+        std::cout << "6 - Perform uniform scalar quantization" << std::endl;
+        std::cout << "7 - Return to the main menu" << std::endl;
         std::cout << "0 - Exit" << std::endl;
 
         std::cin >> op;
@@ -81,10 +100,22 @@ void mainMenuImage(ImageProcessor& imgProc) {
                 break;
             }
             case 6: {
-                return;  // return main menu
+                if (imgProc.calculateHistogram().empty()) {
+                    std::cout << "No image loaded. Load one image first." << std::endl;
+                } else {
+                    int quantizationLevels;
+                    std::cout << "Enter the number of quantization levels (2, 4, 8, 16, 32, etc.): ";
+                    std::cin >> quantizationLevels;
+
+                    imgProc.quantizeImage(quantizationLevels);
+                }
+                break;
+            }
+            case 7: {
+                return;  // Return to the main menu
             }
             case 0: {
-                exit(0);  // exit
+                exit(0);  // Exit the program
             }
             default:
                 std::cout << "Invalid option." << std::endl;
@@ -92,26 +123,8 @@ void mainMenuImage(ImageProcessor& imgProc) {
     }
 }
 
-// Function to compare two images
-void compareImages(ImageProcessor& imgProc) {
-    findImages("./");
-    std::cout << "Select the 1st:" << std::endl;
-    std::string caminhoImagem1 = escolherImagem();
-
-    findImages("./");
-    std::cout << "Select the 2nd:" << std::endl;
-    std::string caminhoImagem2 = escolherImagem();
-
-    if (!imgProc.loadImages(caminhoImagem1, caminhoImagem2)) {
-        std::cout << "Unable to load the images." << std::endl;
-        return;
-    }
-
-    imgProc.compareImages();  // Compare the two images
-}
-
-// Main menu function
-void mainMenu() {
+// Main function
+int main() {
     ImageProcessor imgProc;  // Create an instance of ImageProcessor
     
     int opcao;
@@ -130,15 +143,9 @@ void mainMenu() {
                 compareImages(imgProc);
                 break;
             case 0:
-                return;
+                return 0;
             default:
                 std::cout << "Invalid option." << std::endl;
         }
     }
-}
-
-// Main function
-int main() {
-    mainMenu();
-    return 0;
 }
