@@ -2,43 +2,45 @@
 #include <iostream>
 #include <fstream>
 #include <chrono>
+#include <string>
 
-void decode(const std::string& inputFilename, const std::string& outputFilename) {
-    BitStream bitStream(inputFilename, std::ios::in | std::ios::binary);
+using namespace std;
 
-    std::ofstream outputFile(outputFilename);
+void decode(const string &inputFilename, const string &outputFilename) {
+    BitStream inputBitStream(inputFilename, ios::in | ios::binary);
+    ofstream outputFile(outputFilename);
     if (!outputFile.is_open()) {
-        throw std::runtime_error("Failed to open output file");
+        throw runtime_error("Failed to open output file");
     }
 
     try {
         while (true) {
-            bool bit = bitStream.readBit();
+            bool bit = inputBitStream.readBit();
             outputFile << (bit ? '1' : '0');
         }
-    } catch (const std::ios_base::failure& e) {
+    } catch (const ios_base::failure& e) {
         // End of file reached
     }
 
     outputFile.close();
 }
 
-int main(int argc, char* argv[]) {
+int main(int argc, char *argv[]) {
     if (argc != 3) {
-        std::cerr << "Usage: decoder <input binary file> <output text file>" << std::endl;
+        cerr << "Usage: decoder <input binary file> <output text file>" << endl;
         return 1;
     }
 
     try {
-        auto start = std::chrono::high_resolution_clock::now();
+        auto start = chrono::high_resolution_clock::now();
 
         decode(argv[1], argv[2]);
 
-        auto end = std::chrono::high_resolution_clock::now();
-        std::chrono::duration<double> duration = end - start;
-        std::cout << "Decoding completed in " << duration.count() << " seconds." << std::endl;
-    } catch (const std::exception& e) {
-        std::cerr << "Error: " << e.what() << std::endl;
+        auto end = chrono::high_resolution_clock::now();
+        chrono::duration<double> duration = end - start;
+        cout << "Decoding completed in " << duration.count() << " seconds." << endl;
+    } catch (const exception &e) {
+        cerr << "Error: " << e.what() << endl;
         return 1;
     }
 

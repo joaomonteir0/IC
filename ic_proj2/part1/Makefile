@@ -16,10 +16,8 @@ decoder: decoder.o BitStream.o
 	$(CXX) $(CXXFLAGS) -c -o $@ $<
 
 clean:
-	rm -f *.o encoder decoder *.bin output_*
+	rm -f *.o encoder decoder *.bin decoded.txt
 
 run: all
-	@echo "\nRunning for input_binary.txt..."
-	./encoder input_binary.txt output_binary.bin
-	./decoder output_binary.bin output_binary.txt
-	@echo "Done. Check output_binary.txt for results."
+	./encoder input.txt output.bin
+	./decoder output.bin decoded.txt
