@@ -1,5 +1,5 @@
-#include <cmath>
 #include "Golomb.h"
+#include <cmath>
 
 Golomb::Golomb(int m, bool useInterleaving) : m(m), useInterleaving(useInterleaving) {}
 
@@ -18,11 +18,9 @@ void Golomb::encode(int number, BitStream &bitStream) {
     int q = number / m;
     int r = number % m;
 
-    // Unary coding for quotient
     for (int i = 0; i < q; ++i) bitStream.writeBit(1);
     bitStream.writeBit(0);
 
-    // Truncated binary coding for remainder
     int b = std::ceil(std::log2(m));
     int threshold = (1 << b) - m;
     if (r < threshold) {
@@ -33,11 +31,9 @@ void Golomb::encode(int number, BitStream &bitStream) {
 }
 
 int Golomb::decode(BitStream &bitStream) {
-    // Decode quotient (unary coding)
     int q = 0;
     while (bitStream.readBit()) ++q;
 
-    // Decode remainder (truncated binary coding)
     int b = std::ceil(std::log2(m));
     int threshold = (1 << b) - m;
     int r = bitStream.readBits(b - 1);

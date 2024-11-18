@@ -1,6 +1,6 @@
 #include "BitStream.h"
 
-BitStream::BitStream(const std::string& filename, Mode mode) : buffer(0), bitPos(0), mode(mode) {
+BitStream::BitStream(const std::string& filename, Mode mode) : mode(mode), buffer(0), bitPos(0) {
     if (mode == Write) {
         file.open(filename, std::ios::binary | std::ios::out);
     } else {

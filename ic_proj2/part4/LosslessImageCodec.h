@@ -13,8 +13,8 @@ public:
 
 private:
     int predictPixel(int left, int above, int aboveLeft);
-    std::vector<std::vector<int>> loadImage(const std::string& path); // Placeholder
-    void saveImage(const std::string& path, const std::vector<std::vector<int>>& image); // Placeholder
+    std::vector<std::vector<int>> loadImage(const std::string& path);
+    void saveImage(const std::string& path, const std::vector<std::vector<int>>& image);
 };
 
 #endif // LOSSLESS_IMAGE_CODEC_H

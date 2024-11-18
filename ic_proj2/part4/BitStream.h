@@ -25,7 +25,7 @@ private:
     uint8_t buffer;
     int bitPos;
 
-    void flush(); // Helper function for writing remaining bits
+    void flush();
 };
 
 #endif // BITSTREAM_H

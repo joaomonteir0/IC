@@ -1,28 +1,39 @@
-# Nome do compilador
+# Compiler name
 CXX = g++
 
-# Flags de compilação
+# Compilation flags
 CXXFLAGS = -std=c++17 -Wall -O2
 
-# Arquivos fonte
-SOURCES = main.cpp LosslessImageCodec.cpp BitStream.cpp Golomb.cpp
+# Object files
+OBJS = main.o LosslessImageCodec.o BitStream.o Golomb.o
 
-# Arquivos de cabeçalho
-HEADERS = LosslessImageCodec.h BitStream.h Golomb.h
-
-# Nome do executável
+# Executable name
 TARGET = codec
 
-# Regras de compilação
+# Default rule
 all: $(TARGET)
 
-$(TARGET): $(SOURCES) $(HEADERS)
-	$(CXX) $(CXXFLAGS) -o $(TARGET) $(SOURCES)
+# Linking the executable
+$(TARGET): $(OBJS)
+	$(CXX) $(CXXFLAGS) -o $(TARGET) $(OBJS)
 
-# Limpeza
+# Compiling individual object files
+main.o: main.cpp LosslessImageCodec.h
+	$(CXX) $(CXXFLAGS) -c main.cpp
+
+LosslessImageCodec.o: LosslessImageCodec.cpp LosslessImageCodec.h BitStream.h Golomb.h
+	$(CXX) $(CXXFLAGS) -c LosslessImageCodec.cpp
+
+BitStream.o: BitStream.cpp BitStream.h
+	$(CXX) $(CXXFLAGS) -c BitStream.cpp
+
+Golomb.o: Golomb.cpp Golomb.h BitStream.h
+	$(CXX) $(CXXFLAGS) -c Golomb.cpp
+
+# Cleaning build files
 clean:
-	rm -f $(TARGET) *.o
+	rm -f $(TARGET) $(OBJS)
 
-# Regra para rodar o programa
+# Running the program
 run: $(TARGET)
 	./$(TARGET)
