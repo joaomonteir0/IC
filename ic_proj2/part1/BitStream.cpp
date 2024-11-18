@@ -1,15 +1,19 @@
 #include "BitStream.h"
 
-BitStream::BitStream(const std::string& filename, std::ios::openmode mode) : buffer(0), bitPos(0), mode(mode) {
-    file.open(filename, mode);
+BitStream::BitStream(const std::string& filename, Mode mode) : buffer(0), bitPos(0), mode(mode) {
+    if (mode == Write) {
+        file.open(filename, std::ios::binary | std::ios::out);
+    } else {
+        file.open(filename, std::ios::binary | std::ios::in);
+    }
     if (!file.is_open()) {
         throw std::runtime_error("Failed to open file");
     }
 }
 
 BitStream::~BitStream() {
-    if (mode & std::ios::out) {
-        flushBuffer();
+    if (mode == Write && bitPos > 0) {
+        flush();
     }
     file.close();
 }
