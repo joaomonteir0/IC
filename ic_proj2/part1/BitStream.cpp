@@ -26,40 +26,23 @@ bool BitStream::readBit() {
     if (bitPos == 0) {
         fillBuffer();
     }
-    if (file.eof()) {
-        throw std::ios_base::failure("End of file reached");
-    }
     bool bit = (buffer >> (7 - bitPos)) & 1;
     bitPos = (bitPos + 1) % 8;
     return bit;
 }
 
-void BitStream::writeBits(uint64_t value, int n) {
-    for (int i = n - 1; i >= 0; --i) {
-        writeBit((value >> i) & 1);
+void BitStream::writeBits(const std::vector<int>& bits) {
+    for (int bit : bits) {
+        writeBit(bit);
     }
 }
 
-uint64_t BitStream::readBits(int n) {
-    uint64_t value = 0;
-    for (int i = 0; i < n; ++i) {
-        value = (value << 1) | readBit();
+std::vector<int> BitStream::readBits(size_t n) {
+    std::vector<int> bits;
+    for (size_t i = 0; i < n; ++i) {
+        bits.push_back(readBit());
     }
-    return value;
-}
-
-void BitStream::writeString(const std::string& str) {
-    for (char c : str) {
-        writeBits(static_cast<uint8_t>(c), 8);
-    }
-}
-
-std::string BitStream::readString(size_t length) {
-    std::string str;
-    for (size_t i = 0; i < length; ++i) {
-        str.push_back(static_cast<char>(readBits(8)));
-    }
-    return str;
+    return bits;
 }
 
 void BitStream::flushBuffer() {
@@ -76,4 +59,15 @@ void BitStream::fillBuffer() {
         throw std::ios_base::failure("End of file reached");
     }
     bitPos = 0;
+}
+
+bool BitStream::hasMoreBits() {
+    return file.peek() != EOF;
+}
+
+void BitStream::close() {
+    if (mode & std::ios::out) {
+        flushBuffer();
+    }
+    file.close();
 }

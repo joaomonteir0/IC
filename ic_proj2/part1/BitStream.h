@@ -4,6 +4,7 @@
 #include <fstream>
 #include <string>
 #include <stdexcept>
+#include <vector>
 #include <cstdint>
 
 class BitStream {
@@ -14,11 +15,12 @@ public:
     void writeBit(bool bit);
     bool readBit();
 
-    void writeBits(uint64_t value, int n);
-    uint64_t readBits(int n);
+    void writeBits(const std::vector<int>& bits);
+    std::vector<int> readBits(size_t n);
 
-    void writeString(const std::string& str);
-    std::string readString(size_t length);
+    bool hasMoreBits();
+
+    void close();
 
 private:
     std::fstream file;

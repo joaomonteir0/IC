@@ -3,17 +3,9 @@
 
 Golomb::Golomb(int m, bool useInterleaving) : m(m), useInterleaving(useInterleaving) {}
 
-void Golomb::encode(int number, BitStream &bitStream) {
-    if (useInterleaving) {
-        number = interleave(number);
-    } else {
-        if (number < 0) {
-            bitStream.writeBit(1);
-            number = -number;
-        } else {
-            bitStream.writeBit(0);
-        }
-    }
+void Golomb::encode(int number, BitStream& bitStream) {
+    bool isNegative = (number < 0);
+    number = std::abs(number);
 
     int q = number / m;
     int r = number % m;
@@ -25,15 +17,18 @@ void Golomb::encode(int number, BitStream &bitStream) {
 
     int b = std::ceil(std::log2(m));
     int threshold = (1 << b) - m;
+
     if (r < threshold) {
-        bitStream.writeBits(r, b - 1);
+        bitStream.writeBits(std::vector<int>(b - 1, r));
     } else {
         r += threshold;
-        bitStream.writeBits(r, b);
+        bitStream.writeBits(std::vector<int>(b, r));
     }
+
+    bitStream.writeBit(isNegative);
 }
 
-int Golomb::decode(BitStream &bitStream) {
+int Golomb::decode(BitStream& bitStream) {
     int q = 0;
     while (bitStream.readBit()) {
         ++q;
@@ -41,29 +36,21 @@ int Golomb::decode(BitStream &bitStream) {
 
     int b = std::ceil(std::log2(m));
     int threshold = (1 << b) - m;
-    int r = bitStream.readBits(b - 1);
+    int r = 0;
+
+    for (int i = 0; i < b - 1; ++i) {
+        r = (r << 1) | bitStream.readBit();
+    }
+
     if (r >= threshold) {
         r = (r << 1) | bitStream.readBit();
         r -= threshold;
     }
 
     int number = q * m + r;
-
-    if (!useInterleaving) {
-        if (bitStream.readBit()) {
-            number = -number;
-        }
-    } else {
-        number = deinterleave(number);
+    if (bitStream.readBit()) {
+        number = -number;
     }
 
     return number;
-}
-
-int Golomb::interleave(int number) {
-    return (number >= 0) ? 2 * number : -2 * number - 1;
-}
-
-int Golomb::deinterleave(int number) {
-    return (number % 2 == 0) ? number / 2 : -(number / 2) - 1;
 }

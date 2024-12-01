@@ -1,20 +1,28 @@
 CXX = g++
 CXXFLAGS = -Wall -std=c++17
-OBJS = BitStream.o Golomb.o AudioEncoder.o
+LIBS = -lsndfile
+OBJS_ENCODER = BitStream.o Golomb.o AudioEncoder.o
+OBJS_DECODER = BitStream.o Golomb.o AudioDecoder.o
 
-all: AudioEncoder
+all: AudioEncoder AudioDecoder
 
-AudioEncoder: $(OBJS)
-	$(CXX) $(CXXFLAGS) -o AudioEncoder $(OBJS)
+AudioEncoder: $(OBJS_ENCODER)
+	$(CXX) $(CXXFLAGS) -o AudioEncoder $(OBJS_ENCODER) $(LIBS)
 
-BitStream.o: BitStream.cpp BitStream.h
-	$(CXX) $(CXXFLAGS) -c BitStream.cpp
+AudioDecoder: $(OBJS_DECODER)
+	$(CXX) $(CXXFLAGS) -o AudioDecoder $(OBJS_DECODER) $(LIBS)
 
-Golomb.o: Golomb.cpp Golomb.h
-	$(CXX) $(CXXFLAGS) -c Golomb.cpp
+BitStream.o: ../part1/BitStream.cpp ../part1/BitStream.h
+	$(CXX) $(CXXFLAGS) -c ../part1/BitStream.cpp -o BitStream.o
+
+Golomb.o: ../part2/Golomb.cpp ../part2/Golomb.h
+	$(CXX) $(CXXFLAGS) -c ../part2/Golomb.cpp -o Golomb.o
 
 AudioEncoder.o: AudioEncoder.cpp
-	$(CXX) $(CXXFLAGS) -c AudioEncoder.cpp
+	$(CXX) $(CXXFLAGS) -c AudioEncoder.cpp -o AudioEncoder.o
+
+AudioDecoder.o: AudioDecoder.cpp
+	$(CXX) $(CXXFLAGS) -c AudioDecoder.cpp -o AudioDecoder.o
 
 clean:
-	rm -f $(OBJS) AudioEncoder
+	rm -f *.o AudioEncoder AudioDecoder

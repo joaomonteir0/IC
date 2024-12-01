@@ -1,45 +1,36 @@
-#include "BitStream.h"
-#include "Golomb.h"
+#include "../part1/BitStream.h"
+#include "../part2/Golomb.h"
+#include <sndfile.hh>
+#include <vector>
 #include <iostream>
-#include <fstream>
-#include <cstdint>
 
-void encodeAudio(const std::string &inputAudioFile, const std::string &outputFile, int m) {
-    std::ifstream inputFile(inputAudioFile, std::ios::binary);
-    if (!inputFile.is_open()) {
-        throw std::runtime_error("Failed to open input audio file");
-    }
+constexpr size_t FRAMES_BUFFER_SIZE = 65536;
 
-    BitStream outputBitStream(outputFile, std::ios::out | std::ios::binary);
-    Golomb golombEncoder(m);
-
-    int16_t previousSample = 0;
-    int16_t currentSample;
-    while (inputFile.read(reinterpret_cast<char *>(&currentSample), sizeof(currentSample))) {
-        int residual = currentSample - previousSample;
-        golombEncoder.encode(residual, outputBitStream);
-        previousSample = currentSample;
-    }
-
-    inputFile.close();
-}
-
-int main(int argc, char *argv[]) {
+int main(int argc, char* argv[]) {
     if (argc != 4) {
         std::cerr << "Usage: AudioEncoder <input audio file> <output file> <golomb parameter m>" << std::endl;
         return 1;
     }
 
-    try {
-        std::string inputAudioFile = argv[1];
-        std::string outputFile = argv[2];
-        int m = std::stoi(argv[3]);
-        encodeAudio(inputAudioFile, outputFile, m);
-        std::cout << "Audio encoding completed successfully." << std::endl;
-    } catch (const std::exception &e) {
-        std::cerr << "Error: " << e.what() << std::endl;
+    SndfileHandle inputFile(argv[1]);
+    if (inputFile.error()) {
+        std::cerr << "Error: invalid input file." << std::endl;
         return 1;
     }
 
+    int m = std::stoi(argv[3]);
+    BitStream outputBitStream(argv[2], std::ios::out | std::ios::binary);
+    Golomb golomb(m);
+
+    std::vector<short> samples(FRAMES_BUFFER_SIZE * inputFile.channels());
+    size_t framesRead;
+
+    while ((framesRead = inputFile.readf(samples.data(), FRAMES_BUFFER_SIZE))) {
+        for (size_t i = 0; i < framesRead * inputFile.channels(); ++i) {
+            golomb.encode(samples[i], outputBitStream);
+        }
+    }
+
+    outputBitStream.close();
     return 0;
 }
