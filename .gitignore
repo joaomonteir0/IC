@@ -13,3 +13,5 @@ AudioDecoder
 # Ignore arquivos específicos de sistemas
 Thumbs.db
 *.bak
+
+.vscode
