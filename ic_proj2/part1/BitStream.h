@@ -15,8 +15,8 @@ public:
     void writeBit(bool bit);
     bool readBit();
 
-    void writeBits(const std::vector<int>& bits);
-    std::vector<int> readBits(size_t n);
+    void writeBits(uint64_t value, int n);
+    uint64_t readBits(int n);
 
     bool hasMoreBits();
 

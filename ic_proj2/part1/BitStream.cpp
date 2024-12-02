@@ -1,4 +1,5 @@
 #include "BitStream.h"
+#include <vector> // Adicionado para resolver o erro de std::vector
 
 BitStream::BitStream(const std::string& filename, std::ios::openmode mode) : buffer(0), bitPos(0), mode(mode) {
     file.open(filename, mode);
@@ -26,23 +27,30 @@ bool BitStream::readBit() {
     if (bitPos == 0) {
         fillBuffer();
     }
+    if (file.eof()) {
+        throw std::ios_base::failure("End of file reached");
+    }
     bool bit = (buffer >> (7 - bitPos)) & 1;
     bitPos = (bitPos + 1) % 8;
     return bit;
 }
 
-void BitStream::writeBits(const std::vector<int>& bits) {
-    for (int bit : bits) {
-        writeBit(bit);
+void BitStream::writeBits(uint64_t value, int n) {
+    for (int i = n - 1; i >= 0; --i) {
+        writeBit((value >> i) & 1);
     }
 }
 
-std::vector<int> BitStream::readBits(size_t n) {
-    std::vector<int> bits;
-    for (size_t i = 0; i < n; ++i) {
-        bits.push_back(readBit());
+uint64_t BitStream::readBits(int n) {
+    uint64_t value = 0;
+    for (int i = 0; i < n; ++i) {
+        value = (value << 1) | readBit();
     }
-    return bits;
+    return value;
+}
+
+bool BitStream::hasMoreBits() {
+    return file.peek() != EOF;
 }
 
 void BitStream::flushBuffer() {
@@ -59,10 +67,6 @@ void BitStream::fillBuffer() {
         throw std::ios_base::failure("End of file reached");
     }
     bitPos = 0;
-}
-
-bool BitStream::hasMoreBits() {
-    return file.peek() != EOF;
 }
 
 void BitStream::close() {
