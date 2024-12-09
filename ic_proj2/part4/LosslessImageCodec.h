@@ -1,20 +1,18 @@
 #ifndef LOSSLESS_IMAGE_CODEC_H
 #define LOSSLESS_IMAGE_CODEC_H
 
-#include "BitStream.h"
-#include "Golomb.h"
-#include <vector>
+#include <opencv2/opencv.hpp>
 #include <string>
 
 class LosslessImageCodec {
 public:
-    void encode(const std::string& inputImagePath, const std::string& outputBinaryPath);
-    void decode(const std::string& inputBinaryPath, const std::string& outputImagePath);
+    LosslessImageCodec(int golombM);
+    void encode(const cv::Mat& image, const std::string& outputFile);
+    cv::Mat decode(const std::string& inputFile);
 
 private:
-    int predictPixel(int left, int above, int aboveLeft);
-    std::vector<std::vector<int>> loadImage(const std::string& path);
-    void saveImage(const std::string& path, const std::vector<std::vector<int>>& image);
+    int m; // Golomb parameter
+    int predict(int a, int b, int c);
 };
 
 #endif // LOSSLESS_IMAGE_CODEC_H

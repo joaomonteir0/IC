@@ -6,16 +6,12 @@
 class Golomb {
 public:
     Golomb(int m, bool useInterleaving = false);
-
-    void encode(int number, BitStream &bitStream);
-    int decode(BitStream &bitStream);
+    void encode(int number, BitStream& bitStream);
+    int decode(BitStream& bitStream);
 
 private:
-    int m;
-    bool useInterleaving;
-
-    int interleave(int number);
-    int uninterleave(int number);
+    int m; // Golomb parameter
+    bool useInterleaving; // Whether to use interleaving for negative numbers
 };
 
 #endif // GOLOMB_H

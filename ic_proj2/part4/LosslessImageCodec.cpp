@@ -1,91 +1,63 @@
 #include "LosslessImageCodec.h"
-#include <fstream>
-#include <sstream>
+#include "Golomb.h"
+#include "BitStream.h"
+#include <iostream>
+#include <opencv2/imgcodecs.hpp>
+#include <opencv2/highgui.hpp>
 
-// Load image from text file
-std::vector<std::vector<int>> LosslessImageCodec::loadImage(const std::string& path) {
-    std::ifstream file(path);
-    if (!file.is_open()) {
-        throw std::runtime_error("Failed to open image file");
-    }
+LosslessImageCodec::LosslessImageCodec(int golombM) : m(golombM) {}
 
-    std::vector<std::vector<int>> image;
-    std::string line;
-
-    while (std::getline(file, line)) {
-        std::istringstream iss(line);
-        std::vector<int> row;
-        int value;
-        while (iss >> value) {
-            row.push_back(value);
-        }
-        image.push_back(row);
-    }
-
-    file.close();
-    return image;
+int LosslessImageCodec::predict(int a, int b, int c) {
+    // Use A (left pixel) predictor for simplicity
+    return a;
 }
 
-// Save image to text file
-void LosslessImageCodec::saveImage(const std::string& path, const std::vector<std::vector<int>>& image) {
-    std::ofstream file(path);
-    if (!file.is_open()) {
-        throw std::runtime_error("Failed to save image file");
-    }
+void LosslessImageCodec::encode(const cv::Mat& image, const std::string& outputFile) {
+    BitStream bitStream(outputFile, BitStream::Write);
+    Golomb golomb(m);
 
-    for (const auto& row : image) {
-        for (int pixel : row) {
-            file << pixel << " ";
-        }
-        file << "\n";
-    }
+    // Write image metadata
+    bitStream.writeBits(image.rows, 16);
+    bitStream.writeBits(image.cols, 16);
+    bitStream.writeBits(image.type(), 8);
 
-    file.close();
-}
+    // Predict and encode residuals
+    for (int i = 0; i < image.rows; ++i) {
+        for (int j = 0; j < image.cols; ++j) {
+            int pixel = image.at<uchar>(i, j);
+            int a = (j > 0) ? image.at<uchar>(i, j - 1) : 0; // Left neighbor
+            int predicted = predict(a, 0, 0);
+            int residual = pixel - predicted;
 
-// Predict pixel value
-int LosslessImageCodec::predictPixel(int left, int above, int aboveLeft) {
-    return (left + above) / 2;
-}
-
-// Encode image
-void LosslessImageCodec::encode(const std::string& inputImagePath, const std::string& outputBinaryPath) {
-    BitStream bitStream(outputBinaryPath, BitStream::Mode::Write);
-    Golomb golomb(4);
-
-    auto image = loadImage(inputImagePath);
-    int height = image.size();
-    int width = image[0].size();
-
-    bitStream.writeBits(width, 16);
-    bitStream.writeBits(height, 16);
-
-    for (int y = 0; y < height; ++y) {
-        for (int x = 0; x < width; ++x) {
-            int predicted = (x == 0 || y == 0) ? 0 : predictPixel(image[y][x - 1], image[y - 1][x], image[y - 1][x - 1]);
-            int residual = image[y][x] - predicted;
+            // Encode residual
             golomb.encode(residual, bitStream);
         }
     }
 }
 
-// Decode image
-void LosslessImageCodec::decode(const std::string& inputBinaryPath, const std::string& outputImagePath) {
-    BitStream bitStream(inputBinaryPath, BitStream::Mode::Read);
-    Golomb golomb(4);
+cv::Mat LosslessImageCodec::decode(const std::string& inputFile) {
+    BitStream bitStream(inputFile, BitStream::Read);
+    Golomb golomb(m);
 
-    int width = bitStream.readBits(16);
-    int height = bitStream.readBits(16);
+    // Read image metadata
+    int rows = bitStream.readBits(16);
+    int cols = bitStream.readBits(16);
+    int type = bitStream.readBits(8);
 
-    std::vector<std::vector<int>> image(height, std::vector<int>(width));
+    // Prepare decoded image
+    cv::Mat decodedImage(rows, cols, type);
 
-    for (int y = 0; y < height; ++y) {
-        for (int x = 0; x < width; ++x) {
-            int predicted = (x == 0 || y == 0) ? 0 : predictPixel(image[y][x - 1], image[y - 1][x], image[y - 1][x - 1]);
+    // Decode residuals and reconstruct image
+    for (int i = 0; i < rows; ++i) {
+        for (int j = 0; j < cols; ++j) {
+            int a = (j > 0) ? decodedImage.at<uchar>(i, j - 1) : 0; // Left neighbor
+            int predicted = predict(a, 0, 0);
             int residual = golomb.decode(bitStream);
-            image[y][x] = predicted + residual;
+
+            // Reconstruct pixel
+            int pixel = residual + predicted;
+            decodedImage.at<uchar>(i, j) = pixel;
         }
     }
-
-    saveImage(outputImagePath, image);
+    return decodedImage;
 }

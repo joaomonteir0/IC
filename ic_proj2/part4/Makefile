@@ -1,39 +1,28 @@
-# Compiler name
+# Compiler and flags
 CXX = g++
+CXXFLAGS = -std=c++17 -Wall -O2 `pkg-config --cflags opencv4`
+LDFLAGS = `pkg-config --libs opencv4`
 
-# Compilation flags
-CXXFLAGS = -std=c++17 -Wall -O2
+# Source files
+SRCS = main.cpp LosslessImageCodec.cpp Golomb.cpp BitStream.cpp
+HDRS = LosslessImageCodec.h Golomb.h BitStream.h
+OBJS = $(SRCS:.cpp=.o)
 
-# Object files
-OBJS = main.o LosslessImageCodec.o BitStream.o Golomb.o
+# Target executable
+TARGET = main
 
-# Executable name
-TARGET = codec
-
-# Default rule
+# Build target
 all: $(TARGET)
 
-# Linking the executable
 $(TARGET): $(OBJS)
-	$(CXX) $(CXXFLAGS) -o $(TARGET) $(OBJS)
+	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDFLAGS)
 
-# Compiling individual object files
-main.o: main.cpp LosslessImageCodec.h
-	$(CXX) $(CXXFLAGS) -c main.cpp
+%.o: %.cpp $(HDRS)
+	$(CXX) $(CXXFLAGS) -c $< -o $@
 
-LosslessImageCodec.o: LosslessImageCodec.cpp LosslessImageCodec.h BitStream.h Golomb.h
-	$(CXX) $(CXXFLAGS) -c LosslessImageCodec.cpp
-
-BitStream.o: BitStream.cpp BitStream.h
-	$(CXX) $(CXXFLAGS) -c BitStream.cpp
-
-Golomb.o: Golomb.cpp Golomb.h BitStream.h
-	$(CXX) $(CXXFLAGS) -c Golomb.cpp
-
-# Cleaning build files
+# Clean up
 clean:
-	rm -f $(TARGET) $(OBJS)
+	rm -f $(OBJS) $(TARGET)
 
-# Running the program
-run: $(TARGET)
-	./$(TARGET)
+# Phony targets
+.PHONY: all clean
