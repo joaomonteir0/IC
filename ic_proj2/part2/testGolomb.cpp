@@ -24,9 +24,10 @@ int main(int argc, char *argv[]) {
     }
 
     BitStream outputBitStream(outputFilename, ios::out | ios::binary);
-    Golomb golombEncoder(10, true);
+    int m = 10;
+    Golomb golombEncoder(m);
 
-    vector<int> numbers;
+    vector<int> numbers;    
     int number;
     while (inputFile >> number) {
         numbers.push_back(number);

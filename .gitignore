@@ -1,0 +1,17 @@
+# Ignore object files
+*.o
+
+# Ignore executáveis gerados
+AudioEncoder
+AudioDecoder
+
+# Ignore arquivos temporários
+*.dSYM
+*.tmp
+*.swp
+
+# Ignore arquivos específicos de sistemas
+Thumbs.db
+*.bak
+
+.vscode

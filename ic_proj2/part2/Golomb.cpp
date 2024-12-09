@@ -1,69 +1,60 @@
 #include "Golomb.h"
-#include <cmath>
 
-Golomb::Golomb(int m, bool useInterleaving) : m(m), useInterleaving(useInterleaving) {}
+Golomb::Golomb(int m) : m(m) {}
 
-void Golomb::encode(int number, BitStream &bitStream) {
-    if (useInterleaving) {
-        number = interleave(number);
-    } else {
-        if (number < 0) {
-            bitStream.writeBit(1);
-            number = -number;
-        } else {
-            bitStream.writeBit(0);
-        }
-    }
+void Golomb::encode(int number, BitStream& bitStream) {
+    bool isNegative = (number < 0);
+    number = std::abs(number);
 
+    // Calcula o quociente (q) e o resto (r)
     int q = number / m;
     int r = number % m;
 
+    // Codifica o quociente em formato unário
     for (int i = 0; i < q; ++i) {
         bitStream.writeBit(1);
     }
     bitStream.writeBit(0);
 
+    // Codifica o resto (r) em binário
     int b = std::ceil(std::log2(m));
     int threshold = (1 << b) - m;
+
     if (r < threshold) {
         bitStream.writeBits(r, b - 1);
     } else {
         r += threshold;
         bitStream.writeBits(r, b);
     }
+
+    // Codifica o sinal
+    bitStream.writeBit(isNegative);
 }
 
-int Golomb::decode(BitStream &bitStream) {
+int Golomb::decode(BitStream& bitStream) {
+    // Decodifica o quociente (q) no formato unário
     int q = 0;
     while (bitStream.readBit()) {
         ++q;
     }
 
+    // Decodifica o resto (r) em binário
     int b = std::ceil(std::log2(m));
     int threshold = (1 << b) - m;
     int r = bitStream.readBits(b - 1);
+
     if (r >= threshold) {
         r = (r << 1) | bitStream.readBit();
         r -= threshold;
     }
 
+    // Reconstrói o número
     int number = q * m + r;
 
-    if (!useInterleaving) {
-        if (bitStream.readBit()) {
-            number = -number;
-        }
-    } else {
-        number = deinterleave(number);
+    // Verifica o sinal
+    if (bitStream.readBit()) {
+        number = -number;
     }
 
     return number;
-}
-
-int Golomb::interleave(int number) {
-    return (number >= 0) ? 2 * number : -2 * number - 1;
-}
-
-int Golomb::deinterleave(int number) {
-    return (number % 2 == 0) ? number / 2 : -(number / 2) - 1;
 }

@@ -1,4 +1,5 @@
 #include "BitStream.h"
+#include <vector> // Adicionado para resolver o erro de std::vector
 
 BitStream::BitStream(const std::string& filename, Mode mode) : buffer(0), bitPos(0), mode(mode) {
     if (mode == Write) {
@@ -52,18 +53,8 @@ uint64_t BitStream::readBits(int n) {
     return value;
 }
 
-void BitStream::writeString(const std::string& str) {
-    for (char c : str) {
-        writeBits(static_cast<uint8_t>(c), 8);
-    }
-}
-
-std::string BitStream::readString(size_t length) {
-    std::string str;
-    for (size_t i = 0; i < length; ++i) {
-        str.push_back(static_cast<char>(readBits(8)));
-    }
-    return str;
+bool BitStream::hasMoreBits() {
+    return file.peek() != EOF;
 }
 
 void BitStream::flushBuffer() {
@@ -80,4 +71,11 @@ void BitStream::fillBuffer() {
         throw std::ios_base::failure("End of file reached");
     }
     bitPos = 0;
+}
+
+void BitStream::close() {
+    if (mode & std::ios::out) {
+        flushBuffer();
+    }
+    file.close();
 }
