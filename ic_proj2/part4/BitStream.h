@@ -4,7 +4,6 @@
 #include <fstream>
 #include <string>
 #include <stdexcept>
-#include <vector>
 #include <cstdint>
 
 class BitStream {
@@ -17,12 +16,8 @@ public:
     void writeBit(bool bit);
     bool readBit();
 
-    void writeBits(uint64_t value, int n);
-    uint64_t readBits(int n);
-
-    bool hasMoreBits();
-
-    void close();
+    void writeBits(uint32_t value, int bitCount);
+    uint32_t readBits(int bitCount);
 
 private:
     std::fstream file;
@@ -30,7 +25,7 @@ private:
     uint8_t buffer;
     int bitPos;
 
-    void flush(); // Helper function for writing
+    void flush();
 };
 
 #endif // BITSTREAM_H
