@@ -1,23 +1,14 @@
 CXX = g++
-CXXFLAGS = -std=c++11 -Wall
+CXXFLAGS = -Wall -std=c++17
 
-SRC_FILES = BitStream.cpp encoder.cpp decoder.cpp
-OBJ_FILES = $(SRC_FILES:.cpp=.o)
+TARGETS = testBitStream
+OBJECTS = testBitStream.o
 
-all: encoder decoder
+testBitStream: testBitStream.o
+	$(CXX) $(CXXFLAGS) testBitStream.o -o testBitStream
 
-encoder: encoder.o BitStream.o
-	$(CXX) $(CXXFLAGS) -o $@ $^
-
-decoder: decoder.o BitStream.o
-	$(CXX) $(CXXFLAGS) -o $@ $^
-
-%.o: %.cpp
-	$(CXX) $(CXXFLAGS) -c -o $@ $<
+testBitStream.o: testBitStream.cpp
+	$(CXX) $(CXXFLAGS) -c testBitStream.cpp -o testBitStream.o
 
 clean:
-	rm -f *.o encoder decoder *.bin decoded.txt
-
-run: all
-	./encoder input.txt output.bin
-	./decoder output.bin decoded.txt
+	rm -f $(OBJECTS) testBitStream test.bin

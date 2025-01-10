@@ -1,28 +1,27 @@
 CXX = g++
 CXXFLAGS = -Wall -std=c++17
-LIBS = -lsndfile
-OBJS_ENCODER = BitStream.o Golomb.o AudioEncoder.o
-OBJS_DECODER = BitStream.o Golomb.o AudioDecoder.o
 
-all: AudioEncoder AudioDecoder
+# Diretórios das partes anteriores
+PART1_DIR = ../part1
+PART2_DIR = ../part2
 
-AudioEncoder: $(OBJS_ENCODER)
-	$(CXX) $(CXXFLAGS) -o AudioEncoder $(OBJS_ENCODER) $(LIBS)
+# Programas alvo
+TARGETS = AudioCodec GolombEncoder GolombDecoder
 
-AudioDecoder: $(OBJS_DECODER)
-	$(CXX) $(CXXFLAGS) -o AudioDecoder $(OBJS_DECODER) $(LIBS)
+all: $(TARGETS)
 
-BitStream.o: ../part1/BitStream.cpp ../part1/BitStream.h
-	$(CXX) $(CXXFLAGS) -c ../part1/BitStream.cpp -o BitStream.o
+# Compilar o codificador de áudio
+audio_codec: AudioCodec.cpp $(PART1_DIR)/BitStream.h $(PART2_DIR)/Golomb.h $(PART2_DIR)/GolombEncoder.cpp $(PART2_DIR)/GolombDecoder.cpp
+	$(CXX) $(CXXFLAGS) -o audio_codec AudioCodec.cpp $(PART2_DIR)/GolombEncoder.cpp $(PART2_DIR)/GolombDecoder.cpp -lsndfile -I$(PART1_DIR) -I$(PART2_DIR)
 
-Golomb.o: ../part2/Golomb.cpp ../part2/Golomb.h
-	$(CXX) $(CXXFLAGS) -c ../part2/Golomb.cpp -o Golomb.o
+# Compilar o codificador Golomb
+GolombEncoder: $(PART2_DIR)/GolombEncoder.cpp $(PART1_DIR)/BitStream.h $(PART2_DIR)/Golomb.h
+	$(CXX) $(CXXFLAGS) -o GolombEncoder $(PART2_DIR)/GolombEncoder.cpp -lsndfile -I$(PART1_DIR) -I$(PART2_DIR)
 
-AudioEncoder.o: AudioEncoder.cpp
-	$(CXX) $(CXXFLAGS) -c AudioEncoder.cpp -o AudioEncoder.o
+# Compilar o descodificador Golomb
+GolombDecoder: $(PART2_DIR)/GolombDecoder.cpp $(PART1_DIR)/BitStream.h $(PART2_DIR)/Golomb.h
+	$(CXX) $(CXXFLAGS) -o GolombDecoder $(PART2_DIR)/GolombDecoder.cpp -lsndfile -I$(PART1_DIR) -I$(PART2_DIR)
 
-AudioDecoder.o: AudioDecoder.cpp
-	$(CXX) $(CXXFLAGS) -c AudioDecoder.cpp -o AudioDecoder.o
-
+# Limpar ficheiros gerados
 clean:
-	rm -f *.o AudioEncoder AudioDecoder
+	rm -f $(TARGETS) *.bin *.txt

@@ -1,63 +1,57 @@
 #include "Golomb.h"
-#include "../part1/BitStream.h"
+#include "BitStream.h"
 #include <iostream>
-#include <fstream>
 #include <vector>
+#include <fstream>
 #include <string>
 
-using namespace std;
+int main() {
+    // Parâmetro M para Golomb
+    int M = 10; // Pode ajustar para outro valor, se necessário
 
-int main(int argc, char *argv[]) {
-    if (argc != 4) {
-        cerr << "Usage: TesteGolomb <input text file> <output binary file> <decoded text file>" << endl;
+    // Criar um objeto Golomb
+    Golomb golomb;
+
+    // Vetores para armazenar valores
+    std::vector<int> valores;
+    std::vector<std::string> codificados;
+    std::vector<int> descodificados;
+
+    // Ler valores do ficheiro 'input.txt'
+    std::ifstream inputFile("input.txt");
+    if (!inputFile) {
+        std::cerr << "Erro ao abrir input.txt!" << std::endl;
         return 1;
     }
 
-    string inputFilename = argv[1];
-    string outputFilename = argv[2];
-    string decodedFilename = argv[3];
+    int num;
+    while (inputFile >> num) {
+        valores.push_back(num); // Adicionar valor ao vetor
+    }
+    inputFile.close(); // Fechar ficheiro
 
-    ifstream inputFile(inputFilename);
-    if (!inputFile.is_open()) {
-        cerr << "Failed to open input file" << endl;
-        return 1;
+    // Codificar os valores
+    std::cout << "Codificando valores:" << std::endl;
+    for (int val : valores) {
+        std::string code = golomb.encode(val, M); // Codifica com M=10
+        codificados.push_back(code);
+        std::cout << "Valor: " << val << " -> Código: " << code << std::endl;
     }
 
-    BitStream outputBitStream(outputFilename, ios::out | ios::binary);
-    int m = 10;
-    Golomb golombEncoder(m);
-
-    vector<int> numbers;    
-    int number;
-    while (inputFile >> number) {
-        numbers.push_back(number);
-        golombEncoder.encode(number, outputBitStream);
-    }
-    inputFile.close();
-
-    outputBitStream.~BitStream();
-
-    BitStream inputBitStream(outputFilename, ios::in | ios::binary);
-    ofstream decodedFile(decodedFilename);
-    if (!decodedFile.is_open()) {
-        cerr << "Failed to open decoded file" << endl;
-        return 1;
+    // Descodificar os códigos
+    std::cout << "\nDescodificando valores:" << std::endl;
+    for (const std::string &code : codificados) {
+        std::vector<int> dec = golomb.decode(code, M); // Descodifica com M=10
+        int val = dec[0]; // Pega o primeiro valor do vetor retornado
+        descodificados.push_back(val);
+        std::cout << "Código: " << code << " -> Valor: " << val << std::endl;
     }
 
-    bool success = true;
-    for (int originalNumber : numbers) {
-        int decodedNumber = golombEncoder.decode(inputBitStream);
-        decodedFile << decodedNumber << endl;
-        if (decodedNumber != originalNumber) {
-            success = false;
-        }
-    }
-    decodedFile.close();
-
-    if (success) {
-        cout << "All numbers were successfully encoded and decoded." << endl;
+    // Validar se os valores descodificados correspondem aos originais
+    if (valores == descodificados) {
+        std::cout << "\nTeste bem-sucedido! Os valores descodificados correspondem aos originais." << std::endl;
     } else {
-        cout << "There were mismatches in the encoding/decoding process." << endl;
+        std::cout << "\nErro no teste! Valores descodificados não correspondem." << std::endl;
     }
 
     return 0;

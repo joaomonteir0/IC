@@ -1,26 +1,32 @@
 CXX = g++
-CXXFLAGS = -std=c++11 -Wall
+CXXFLAGS = -Wall -std=c++17
 
-PART1_DIR = ../part1
-SRC_FILES = Golomb.cpp testGolomb.cpp $(PART1_DIR)/BitStream.cpp
-OBJ_FILES = $(SRC_FILES:.cpp=.o)
+# Caminho para os ficheiros na Part 1
+BITSTREAM_DIR = ../part1
 
-all: testGolomb
+# Programas e objetos
+TARGETS = GolombEncoder GolombDecoder testGolomb
+OBJECTS = GolombEncoder.o GolombDecoder.o testGolomb.o
 
-testGolomb: testGolomb.o Golomb.o BitStream.o
-	$(CXX) $(CXXFLAGS) -o $@ $^
+all: $(TARGETS)
 
-testGolomb.o: testGolomb.cpp
-	$(CXX) $(CXXFLAGS) -I$(PART1_DIR) -c -o $@ $<
+GolombEncoder: GolombEncoder.o
+	$(CXX) $(CXXFLAGS) -o GolombEncoder GolombEncoder.o -lsndfile
 
-Golomb.o: Golomb.cpp
-	$(CXX) $(CXXFLAGS) -I$(PART1_DIR) -c -o $@ $<
+GolombDecoder: GolombDecoder.o
+	$(CXX) $(CXXFLAGS) -o GolombDecoder GolombDecoder.o -lsndfile
 
-BitStream.o: $(PART1_DIR)/BitStream.cpp
-	$(CXX) $(CXXFLAGS) -I$(PART1_DIR) -c -o $@ $<
+testGolomb: testGolomb.o
+	$(CXX) $(CXXFLAGS) -o testGolomb testGolomb.o
+
+GolombEncoder.o: GolombEncoder.cpp $(BITSTREAM_DIR)/BitStream.h $(BITSTREAM_DIR)/BitStream.h
+	$(CXX) $(CXXFLAGS) -c GolombEncoder.cpp -o GolombEncoder.o -I$(BITSTREAM_DIR)
+
+GolombDecoder.o: GolombDecoder.cpp $(BITSTREAM_DIR)/BitStream.h $(BITSTREAM_DIR)/BitStream.h
+	$(CXX) $(CXXFLAGS) -c GolombDecoder.cpp -o GolombDecoder.o -I$(BITSTREAM_DIR)
+
+testGolomb.o: testGolomb.cpp $(BITSTREAM_DIR)/BitStream.h $(BITSTREAM_DIR)/BitStream.h
+	$(CXX) $(CXXFLAGS) -c testGolomb.cpp -o testGolomb.o -I$(BITSTREAM_DIR)
 
 clean:
-	rm -f *.o testGolomb output.bin decoded.txt
-
-run: all
-	./testGolomb input.txt output.bin decoded.txt
+	rm -f $(TARGETS) *.o *.bin output.wav
