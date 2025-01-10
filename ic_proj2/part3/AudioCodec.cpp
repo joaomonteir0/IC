@@ -7,23 +7,66 @@
 #include <cstdio>
 #include <stdexcept>
 #include <ctime>
+#include <cmath>
+#include <sndfile.hh>
 
-const std::vector<std::string> AUDIO_FILES = {"sample01.wav"};
+const std::vector<std::string> AUDIO_FILES = {"sample01.wav", "sample02.wav", "sample03.wav", "sample04.wav", "sample05.wav", "sample06.wav", "sample07.wav"};
 const std::vector<int> FIXED_M_VALUES = {128, 256, 512, 1024, 2048};
 const std::vector<int> BS_VALUES = {128, 512, 1024, 2048, 16384};
 const std::vector<int> QUANT_VALUES = {2, 4, 6, 8};
 
-void dump_stats(std::ofstream &file, const std::vector<std::string> &times, const std::vector<std::string> &sizes) {
+// Função para calcular SNR diretamente entre dois arquivos WAV
+double calculateSNR(const std::string &original, const std::string &decoded) {
+    SndfileHandle sfOrig(original);
+    SndfileHandle sfDec(decoded);
+
+    if (sfOrig.error() || sfDec.error()) {
+        std::cerr << "Error: Could not open one of the files for SNR calculation.\n";
+        return -1.0;
+    }
+
+    if (sfOrig.frames() != sfDec.frames() || sfOrig.channels() != sfDec.channels()) {
+        std::cerr << "Error: File dimensions do not match for SNR calculation.\n";
+        return -1.0;
+    }
+
+    std::vector<short> origSamples(sfOrig.frames() * sfOrig.channels());
+    std::vector<short> decSamples(sfDec.frames() * sfDec.channels());
+    sfOrig.readf(origSamples.data(), sfOrig.frames());
+    sfDec.readf(decSamples.data(), sfDec.frames());
+
+    double signalPower = 0.0;
+    double noisePower = 0.0;
+
+    for (size_t i = 0; i < origSamples.size(); ++i) {
+        signalPower += origSamples[i] * origSamples[i];
+        double noise = origSamples[i] - decSamples[i];
+        noisePower += noise * noise;
+    }
+
+    if (noisePower == 0) {
+        return std::numeric_limits<double>::infinity();
+    }
+
+    return 10.0 * log10(signalPower / noisePower);
+}
+
+void dump_stats(std::ofstream &file, const std::vector<std::string> &times, const std::vector<std::string> &sizes, const std::vector<double> &snrs = {}) {
     file << "times:\n";
     for (const auto &t : times) file << t << "\n";
 
     file << "sizes:\n";
     for (const auto &s : sizes) file << s << "\n";
+
+    if (!snrs.empty()) {
+        file << "SNRs:\n";
+        for (const auto &s : snrs) file << s << " dB\n";
+    }
 }
 
 int lossy_encoder(std::ofstream &loe, int idx) {
-    std::vector<std::string> times;
-    std::vector<std::string> sizes;
+    std::vector<std::string> times, sizes;
+    std::vector<double> snrs;
 
     loe << "Testing with auto M different block 2048\n";
     loe << "Testing quantization values (2, 4, 6, 8)\n";
@@ -36,28 +79,32 @@ int lossy_encoder(std::ofstream &loe, int idx) {
             cmd_size << "ls -l " << idx;
 
             char buffer[128];
-            FILE* pipe = popen(cmd_time.str().c_str(), "r");
-            fgets(buffer, 128, pipe);
+            FILE *pipe = popen(cmd_time.str().c_str(), "r");
+            fgets(buffer, sizeof(buffer), pipe);
             times.push_back(std::string(buffer));
             pclose(pipe);
 
             pipe = popen(cmd_size.str().c_str(), "r");
-            fgets(buffer, 128, pipe);
+            fgets(buffer, sizeof(buffer), pipe);
             sizes.push_back(std::string(buffer));
             pclose(pipe);
 
+            std::string decodedFile = std::to_string(idx) + ".wav";
+            double snr = calculateSNR(audio, decodedFile);
+            snrs.push_back(snr);
+
             idx++;
         }
-        dump_stats(loe, times, sizes);
+        dump_stats(loe, times, sizes, snrs);
         times.clear();
         sizes.clear();
+        snrs.clear();
     }
     return idx;
 }
 
 int lossless_encoder(std::ofstream &lle, int idx) {
-    std::vector<std::string> times;
-    std::vector<std::string> sizes;
+    std::vector<std::string> times, sizes;
 
     lle << "Testing with fixed M values (128, 256, 512, 1024, 2048)\n";
     for (const auto &audio : AUDIO_FILES) {
@@ -68,13 +115,13 @@ int lossless_encoder(std::ofstream &lle, int idx) {
             cmd_size << "ls -l " << idx;
 
             char buffer[128];
-            FILE* pipe = popen(cmd_time.str().c_str(), "r");
-            fgets(buffer, 128, pipe);
+            FILE *pipe = popen(cmd_time.str().c_str(), "r");
+            fgets(buffer, sizeof(buffer), pipe);
             times.push_back(std::string(buffer));
             pclose(pipe);
 
             pipe = popen(cmd_size.str().c_str(), "r");
-            fgets(buffer, 128, pipe);
+            fgets(buffer, sizeof(buffer), pipe);
             sizes.push_back(std::string(buffer));
             pclose(pipe);
 
@@ -94,13 +141,13 @@ int lossless_encoder(std::ofstream &lle, int idx) {
             cmd_size << "ls -l " << idx;
 
             char buffer[128];
-            FILE* pipe = popen(cmd_time.str().c_str(), "r");
-            fgets(buffer, 128, pipe);
+            FILE *pipe = popen(cmd_time.str().c_str(), "r");
+            fgets(buffer, sizeof(buffer), pipe);
             times.push_back(std::string(buffer));
             pclose(pipe);
 
             pipe = popen(cmd_size.str().c_str(), "r");
-            fgets(buffer, 128, pipe);
+            fgets(buffer, sizeof(buffer), pipe);
             sizes.push_back(std::string(buffer));
             pclose(pipe);
 
@@ -119,8 +166,8 @@ int decoder(std::ofstream &d, int idx) {
         cmd_decode << "./GolombDecoder " << i << " " << i << ".wav";
 
         char buffer[128];
-        FILE* pipe = popen(cmd_decode.str().c_str(), "r");
-        fgets(buffer, 128, pipe);
+        FILE *pipe = popen(cmd_decode.str().c_str(), "r");
+        fgets(buffer, sizeof(buffer), pipe);
         d << std::string(buffer) << "\n";
         pclose(pipe);
 

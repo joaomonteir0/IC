@@ -1,180 +1,174 @@
-#include "Golomb.h"
+#include "../part1/BitStream.h"
 #include <iostream>
 #include <string>
-#include <vector>
-#include <cmath>
 #include <sndfile.hh>
-#include "../part1/BitStream.h"
+#include "Golomb.h"
 
 using namespace std;
 
-constexpr size_t FRAMES_BUFFER_SIZE = 65536; // Buffer para leitura de frames
+constexpr size_t FRAMES_BUFFER_SIZE = 65536; // Buffer for reading frames
 
-// Função para prever o próximo valor com base nos 3 anteriores
-inline int predict(int a, int b, int c) {
-    return 3 * a - 3 * b + c;
-}
+int main( int argc, char** argv ) {
 
-// Lê e converte bits do cabeçalho
-int readHeader(BitStream &bs, int size) {
-    vector<int> bits = bs.readBits(size);
-    int value = 0;
-    for (size_t i = 0; i < bits.size(); i++)
-        value += bits[i] * pow(2, bits.size() - i - 1);
-    return value;
-}
+    //function that predicts the next value in the sequence based on 3 previous values
+    auto predict = [](int a, int b, int c) {
+        //3*a - 3*b + c
+        return 3*a - 3*b + c;
+    };
 
-// Valida parâmetros recuperados do cabeçalho
-void validateHeader(const string &param, int value) {
-    if (value < 0) {
-        cerr << "Erro: valor inválido para " << param << ": " << value << endl;
-        exit(1);
-    }
-}
-
-int main(int argc, char **argv) {
-    // Verifica argumentos
-    if (argc < 3) {
-        cerr << "Uso: " << argv[0] << " <arquivo de entrada> <arquivo de saída>\n";
-        return 1;
-    }
-
-    // Inicia o temporizador
+    //start a timer
     clock_t start = clock();
 
-    // Parâmetros iniciais
+    if(argc < 3) {
+		cerr << "Usage: " << argv[0] << " <input file> <output file>\n";
+		return 1;
+	}
+
     int sampleRate = 44100;
-    BitStream bs(argv[1], "r");
+    BitStream bs (argv[1], "r");
+    vector<int> v_channels = bs.readBits(16);
+    vector<int> v_padding = bs.readBits(16);
+    vector<int> v_q = bs.readBits(16);
+    vector<int> v_nFrames = bs.readBits(32);
+    vector<int> v_blockSize = bs.readBits(16);
+    vector<int> v_num_zeros = bs.readBits(16);
+    vector<int> v_m_size = bs.readBits(16);
 
-    // Leitura do cabeçalho
-    int nChannels = readHeader(bs, 16);
-    validateHeader("nChannels", nChannels);
+    int nChannels = 0;
+    for(long unsigned int i = 0; i < v_channels.size(); i++)
+        nChannels += v_channels[i] * pow(2, v_channels.size() - i - 1);
 
-    int padding = readHeader(bs, 16);
-    validateHeader("padding", padding);
+    int padding = 0;
+    for(long unsigned int i = 0; i < v_padding.size(); i++)
+        padding += v_padding[i] * pow(2, v_padding.size() - i - 1);
 
-    int q = readHeader(bs, 16);
-    validateHeader("quantization factor", q);
+    int q = 0;
+    for(long unsigned int i = 0; i < v_q.size(); i++)
+        q += v_q[i] * pow(2, v_q.size() - i - 1);
 
-    int nFrames = readHeader(bs, 32);
-    validateHeader("nFrames", nFrames);
+    int nFrames = 0;
+    for(long unsigned int i = 0; i < v_nFrames.size(); i++)
+        nFrames += v_nFrames[i] * pow(2, v_nFrames.size() - i - 1);
 
-    int blockSize = readHeader(bs, 16);
-    validateHeader("blockSize", blockSize);
+    SndfileHandle sfhOut { argv[argc-1], SFM_WRITE, SF_FORMAT_WAV | SF_FORMAT_PCM_16, nChannels, sampleRate };
 
-    int num_zeros = readHeader(bs, 16);
-    validateHeader("num_zeros", num_zeros);
+    int m_size = 0;
+    for(long unsigned int i = 0; i < v_m_size.size(); i++) {
+        m_size += v_m_size[i] * pow(2, v_m_size.size() - i - 1);
+    }
 
-    int m_size = readHeader(bs, 16);
-    validateHeader("m_size", m_size);
+    int blockSize = 0;
+    for(long unsigned int i = 0; i < v_blockSize.size(); i++) {
+        blockSize += v_blockSize[i] * pow(2, v_blockSize.size() - i - 1);
+    }
 
-    // Configura o arquivo de saída
-    SndfileHandle sfhOut(argv[2], SFM_WRITE, SF_FORMAT_WAV | SF_FORMAT_PCM_16, nChannels, sampleRate);
-
-    // Lê os valores de M
+    int num_zeros = 0;
+    for(long unsigned int i = 0; i < v_num_zeros.size(); i++) {
+        num_zeros += v_num_zeros[i] * pow(2, v_num_zeros.size() - i - 1);
+    }
+    
     vector<int> m_vector;
-    for (int i = 0; i < m_size; i++) {
-        int m_i = readHeader(bs, 16);
-        validateHeader("m_i", m_i);
+    for(int i = 0; i < m_size; i++) {
+        vector<int> v_m_i = bs.readBits(16);
+        int m_i = 0;
+        for(long unsigned int j = 0; j < v_m_i.size(); j++) {
+            m_i += v_m_i[j] * pow(2, v_m_i.size() - j - 1);
+        }
         m_vector.push_back(m_i);
     }
 
-    // Lê os bits codificados
-    int total = bs.getFileSize() - (16 + 2 * m_size); // Corrige tamanho do cabeçalho
-    long totalBits = total * 8;
-    vector<int> encodedBits = bs.readBits(totalBits);
-
-    // Validação do tamanho dos bits codificados
-    if (encodedBits.empty()) {
-        cerr << "Erro: nenhum dado codificado encontrado!\n";
-        exit(1);
+    //total size of the file - the size of the header and the size of the m vector
+    int total = bs.getFileSize() - (16 + 2*m_size);
+    long totalBits = total*8;
+    vector<int> v_encoded = bs.readBits(totalBits);
+    //convert vector<int> of bits to string of bits
+    string encoded = "";
+    for(long unsigned int  i = 0; i < v_encoded.size(); i++) {
+        encoded += to_string(v_encoded[i]);
     }
 
-    // Converte para string e remove zeros extras
-    string encoded;
-    for (auto bit : encodedBits) encoded += to_string(bit);
+    //discard the last num_zeros bits
     encoded = encoded.substr(0, encoded.size() - num_zeros);
 
-    // Decodifica os dados
+    //decode looping through the v_m vector
     Golomb g;
-    vector<int> decoded = (m_size == 1)
-                              ? g.decode(encoded, m_vector[0])
-                              : g.decodeMultiple(encoded, m_vector, blockSize);
+    vector<int> decoded;
+    if (m_size == 1)
+        decoded = g.decode(encoded, m_vector[0]);
+    else 
+        decoded = g.decodeMultiple(encoded, m_vector, blockSize);
 
-    // Reconstrói os valores originais
     vector<short> samplesVector;
 
-    auto reconstructSamples = [&](int start, int end) {
-        for (int i = start; i < end; i++) {
-            if (i >= 3) {
-                int difference = decoded[i] + predict(samplesVector[i - 1], samplesVector[i - 2], samplesVector[i - 3]);
-                samplesVector.push_back(difference);
-            } else {
-                samplesVector.push_back(decoded[i]);
-            }
-        }
-    };
-
     if (nChannels < 2) {
-        reconstructSamples(0, decoded.size());
+        for (long unsigned int i = 0; i < decoded.size(); i++) {
+            if (i >= 3) {
+                int difference = decoded[i] + predict(samplesVector[i-1], samplesVector[i-2], samplesVector[i-3]);
+                samplesVector.push_back(difference);
+            }
+            else samplesVector.push_back(decoded[i]);
+        }
     } else {
-        reconstructSamples(0, nFrames);
-        reconstructSamples(nFrames, decoded.size());
-
-        // Mescla os dois canais
-        vector<short> merged;
+        //da para otimizar apenas com um ciclo e condicionando o i
         for (int i = 0; i < nFrames; i++) {
-            merged.push_back(samplesVector[i]);
-            merged.push_back(samplesVector[nFrames + i]);
+            if (i >= 3) {
+                int difference = decoded[i] + predict(samplesVector[i-1], samplesVector[i-2], samplesVector[i-3]);
+                samplesVector.push_back(difference);
+            }
+            else samplesVector.push_back(decoded[i]); 
+        }
+
+        for (long unsigned int i = nFrames; i < decoded.size(); i++) {
+            if ((int) i >= nFrames + 3) {
+                int difference = decoded[i] + predict(samplesVector[i-1], samplesVector[i-2], samplesVector[i-3]);
+                samplesVector.push_back(difference);
+            }
+            else samplesVector.push_back(decoded[i]); 
+        }
+
+        //merge the two channels into one vector
+        vector<short> merged;
+        //the first channel is the first nFrames samples
+        vector<short> firstChannel(samplesVector.begin(), samplesVector.begin() + nFrames);
+        //the second channel is the last nFrames samples
+        vector<short> secondChannel(samplesVector.begin() + nFrames, samplesVector.end());
+        for(int i = 0; i < nFrames; i++) {
+            merged.push_back(firstChannel[i]);
+            merged.push_back(secondChannel[i]);
         }
         samplesVector = merged;
     }
 
-    // Desquantiza os valores
-    auto dequantize = [&](int shift) {
-        for (auto &sample : samplesVector) {
-            sample = (sample << shift) | 1;
-        }
-    };
-
+    //quantize the samples
     if (q != 0) {
-        q == 1 ? dequantize(1) : dequantize(q);
+        if(q != 1){
+            for (long unsigned int i = 0; i < samplesVector.size(); i++) {
+                //shift the sample to the left by 1 bit
+                samplesVector[i] = samplesVector[i] << 1;
+                //change that last bit to 1
+                samplesVector[i] = samplesVector[i] | 1;
+                // //shif the sample to the left by q-1 bits
+                samplesVector[i] = samplesVector[i] << (q-1);
+            }
+        } else {
+            for (long unsigned int i = 0; i < samplesVector.size(); i++) {
+                //shift the sample to the left by 1 bit
+                samplesVector[i] = samplesVector[i] << 1;
+            }
+        }
     }
 
-    // Remove preenchimento adicional
-    if (padding > 0 && samplesVector.size() > (size_t)padding) {
-        samplesVector.resize(samplesVector.size() - padding);
-    } else if (padding > 0) {
-        cerr << "Erro: padding maior que o tamanho dos dados!\n";
-        exit(1);
-    }
-
-    // Cálculo do SNR
-    double numerador = 0.0;
-    double denominador = 0.0;
-
-    for (size_t i = 0; i < samplesVector.size(); i++) {
-        double original_sample = decoded[i];  // Original antes da codificação
-        double reconstruído_sample = samplesVector[i];  // Após reconstrução
-        numerador += original_sample * original_sample;
-        denominador += pow(original_sample - reconstruído_sample, 2);
-    }
-
-    if (denominador == 0) {
-        cout << "SNR: Infinito (sem ruído)" << endl;
-    } else {
-        double snr = 10 * log10(numerador / denominador);
-        cout << "SNR: " << snr << " dB" << endl;
-    }
-
-    // Escreve no arquivo de saída
+    //remove the last int padding values
+    samplesVector = vector<short>(samplesVector.begin(), samplesVector.end() - padding);
+    //write to wav file the samples vector
     sfhOut.write(samplesVector.data(), samplesVector.size());
     bs.close();
 
-    // Exibe o tempo decorrido
+    //end timer
     clock_t end = clock();
-    double elapsed_secs = double(end - start) / CLOCKS_PER_SEC * 1000;
-    cout << "Tempo decorrido: " << elapsed_secs << " ms" << endl;
+    double elapsed_secs = double(end - start) / CLOCKS_PER_SEC;
+    //in milliseconds
+    cout << "Time elapsed: " << elapsed_secs*1000 << " ms" << endl;
 
     return 0;
 }
