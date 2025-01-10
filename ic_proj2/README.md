@@ -58,7 +58,7 @@ cd part4/
 make
 ```
 
-It's necessary to have an png image in the directory to be loaded in the program.
+It's necessary to have an image in the directory to be loaded in the program.
 
 ### Encode
 To encode, in this case, the original.png is the loaded image and the output will be the binary file after encoding.
@@ -73,7 +73,7 @@ To decode it's necessary to load the binary file in the directory and then run t
 ```bash
 ./main decode output final.png
 ```
-
+<i>In this version, the output of decode has to be .png but we will try to change it.</i>
 
 
 # Authors
