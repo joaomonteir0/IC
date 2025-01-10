@@ -24,4 +24,4 @@ GolombDecoder: $(PART2_DIR)/GolombDecoder.cpp $(PART1_DIR)/BitStream.h $(PART2_D
 
 # Limpar ficheiros gerados
 clean:
-	rm -f $(TARGETS) *.bin *.txt *.o
+	rm -f $(TARGETS) *.bin *.txt *.o output.wav
