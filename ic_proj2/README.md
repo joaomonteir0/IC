@@ -48,6 +48,34 @@ make clean
 - **output.bin**: Binary file containing the encoded integers.
 - **decoded.txt**: Text file containing the decoded integers.
 
+## Part IV
+
+## Compile and Run
+In the directory, execute the following commands:
+
+```bash
+cd part4/
+make
+```
+
+It's necessary to have an png image in the directory to be loaded in the program.
+
+### Encode
+To encode, in this case, the original.png is the loaded image and the output will be the binary file after encoding.
+
+```bash
+./main encode original.png output
+```
+
+### Decode
+To decode it's necessary to load the binary file in the directory and then run the following commands. It is also necessary to define the final name of the output when decoded.
+
+```bash
+./main decode output final.png
+```
+
+
+
 # Authors
 
 [João Monteiro](https://github.com/joaomonteir0), 102690 \
