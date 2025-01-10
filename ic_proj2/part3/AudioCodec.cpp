@@ -17,6 +17,7 @@ const std::vector<int> QUANT_VALUES = {2, 4, 6, 8};
 
 // Função para calcular SNR diretamente entre dois arquivos WAV
 double calculateSNR(const std::string &original, const std::string &decoded) {
+    std::cerr << "Calculating SNR for: " << original << " vs " << decoded << "\n";
     SndfileHandle sfOrig(original);
     SndfileHandle sfDec(decoded);
 
@@ -51,7 +52,8 @@ double calculateSNR(const std::string &original, const std::string &decoded) {
     return 10.0 * log10(signalPower / noisePower);
 }
 
-void dump_stats(std::ofstream &file, const std::vector<std::string> &times, const std::vector<std::string> &sizes, const std::vector<double> &snrs = {}) {
+void dump_stats(std::ofstream &file, const std::vector<std::string> &times,
+                const std::vector<std::string> &sizes, const std::vector<double> &snrs = {}) {
     file << "times:\n";
     for (const auto &t : times) file << t << "\n";
 
@@ -89,9 +91,25 @@ int lossy_encoder(std::ofstream &loe, int idx) {
             sizes.push_back(std::string(buffer));
             pclose(pipe);
 
+            // Decode and calculate SNR
+            std::stringstream decodeCmd;
+            decodeCmd << "./GolombDecoder " << idx << " " << idx << ".wav";
+            system(decodeCmd.str().c_str());
+
             std::string decodedFile = std::to_string(idx) + ".wav";
             double snr = calculateSNR(audio, decodedFile);
-            snrs.push_back(snr);
+            if (snr == -1.0) {
+                std::cerr << "Error: Could not calculate SNR for file: " << decodedFile << "\n";
+                snrs.push_back(-1.0); // Use a placeholder for failed SNR
+            } else {
+                std::cerr << "SNR calculated for: " << decodedFile << " -> " << snr << " dB\n";
+                snrs.push_back(snr);
+            }
+
+            // Remove decoded file after SNR calculation
+            std::stringstream rmCmd;
+            rmCmd << "rm -f " << decodedFile;
+            system(rmCmd.str().c_str());
 
             idx++;
         }
@@ -172,7 +190,7 @@ int decoder(std::ofstream &d, int idx) {
         pclose(pipe);
 
         std::stringstream cmd_rm1, cmd_rm2;
-        cmd_rm1 << "rm " << i;
+        cmd_rm1 << "rm -f " << i;
         cmd_rm2 << "rm " << i << ".wav";
         system(cmd_rm1.str().c_str());
         system(cmd_rm2.str().c_str());
