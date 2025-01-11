@@ -2,7 +2,6 @@
 #include <iostream>
 #include <string>
 #include <vector>
-#include <fftw3.h>
 #include <sndfile.hh>
 #include "../part1/BitStream.h"
 #include <string.h>

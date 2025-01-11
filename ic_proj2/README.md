@@ -19,11 +19,6 @@ If you want to delete the outputs of the execution, you can write the following 
 make clean
 ```
 
-### Output
-
-- **output.bin**: Binary file containing the encoded integers.
-- **decoded.txt**: Text file containing the decoded integers.
-
 ## Part II - Golomb Coding
 
 In this part, we developed a C++ class for Golomb coding, a type of universal code often used in data compression. Golomb coding is particularly effective for encoding integers with a geometric distribution and can handle both positive and negative values.
@@ -42,11 +37,6 @@ If you want to delete the outputs of the execution, you can write the following 
 ```bash
 make clean
 ```
-
-### Output
-
-- **output.bin**: Binary file containing the encoded integers.
-- **decoded.txt**: Text file containing the decoded integers.
 
 ## Part IV
 
