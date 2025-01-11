@@ -2,35 +2,37 @@
 #include <iostream>
 #include <string>
 #include <vector>
-#include <cmath>
-#include <cstring>
+#include <fftw3.h>
 #include <sndfile.hh>
 #include "../part1/BitStream.h"
+#include <string.h>
+#include <numeric>
+#include <algorithm>
 
 using namespace std;
 
-// Tamanho máximo do buffer para frames
-constexpr size_t FRAMES_BUFFER_SIZE = 65536;
+constexpr size_t FRAMES_BUFFER_SIZE = 65536; // Buffer for reading frames
 
-// Função para prever o próximo valor com base em 3 valores anteriores
-inline int predict(int a, int b, int c) {
+// Function to predict the next value in the sequence based on 3 previous values
+int predict(int a, int b, int c) {
     return 3 * a - 3 * b + c;
 }
 
-// Função para calcular 'm' com base em 'u'
-inline int calc_m(int u) {
-    if (u <= 0) return 1; // Evita divisão por zero ou log negativo
-    return (int)-(1 / log((double)u / (1 + u)));
+// Function to calculate m based on u
+int calc_m(int u) {
+    return static_cast<int>(-1 / log(static_cast<double>(u) / (1 + u)));
 }
 
-// Valida argumentos passados ao programa
-bool validateArgs(int argc, char *argv[], bool &autoMode, bool &quantization, int &q) {
+int main(int argc, char *argv[]) {
     if (argc < 4 || argc > 6) {
-        cerr << "Uso: " << argv[0] << " <input file> <output file> <m | bs> [auto] [q]\n";
-        return false;
+        cerr << "Usage: " << argv[0] << " <input file> <output file> <m | bs> [auto] [q] \n";
+        return 1;
     }
 
-    // Modo automático ou quantização
+    int q = 0;
+    bool autoMode = false;
+    bool quantization = false;
+
     if (argc >= 5) {
         if (strcmp(argv[4], "auto") == 0) {
             autoMode = true;
@@ -46,140 +48,135 @@ bool validateArgs(int argc, char *argv[], bool &autoMode, bool &quantization, in
     }
 
     if (q > 16 || q < 0) {
-        cerr << "[q] deve estar entre 0 e 16\n";
-        return false;
-    }
-
-    return true;
-}
-
-int main(int argc, char *argv[]) {
-    // Variáveis de configuração
-    bool autoMode = false, quantization = false;
-    int q = 0;
-
-    // Valida argumentos
-    if (!validateArgs(argc, argv, autoMode, quantization, q)) return 1;
-
-    // Abre o arquivo de entrada
-    SndfileHandle sfhIn{argv[1]};
-    if (sfhIn.error()) {
-        cerr << "Erro: arquivo de entrada inválido\n";
+        cerr << "[q] must be between 1 and 15\n";
         return 1;
     }
 
-    // Valida formato do arquivo
-    if ((sfhIn.format() & SF_FORMAT_TYPEMASK) != SF_FORMAT_WAV ||
+    SndfileHandle sfhIn{argv[1]};
+    if (sfhIn.error() || (sfhIn.format() & SF_FORMAT_TYPEMASK) != SF_FORMAT_WAV || 
         (sfhIn.format() & SF_FORMAT_SUBMASK) != SF_FORMAT_PCM_16) {
-        cerr << "Erro: formato do arquivo deve ser WAV PCM_16\n";
+        cerr << "Error: invalid input file or format\n";
         return 1;
     }
 
     string output = argv[2];
-    int m = atoi(argv[3]);
-    int bs = m, og = m;
-
-    // Inicia o temporizador
+    short m = atoi(argv[3]);
     clock_t start = clock();
+    short bs = m;
 
-    // Lê informações básicas
-    size_t nFrames = sfhIn.frames();
-    size_t nChannels = sfhIn.channels();
+    size_t nFrames = static_cast<size_t>(sfhIn.frames());
+    size_t nChannels = static_cast<size_t>(sfhIn.channels());
     vector<short> samples(nChannels * nFrames);
     sfhIn.readf(samples.data(), nFrames);
+    size_t nBlocks = static_cast<size_t>(ceil(static_cast<double>(nFrames) / bs));
 
-    // Calcula blocos e padding
-    size_t nBlocks = static_cast<size_t>(ceil((double)nFrames / bs));
     samples.resize(nBlocks * bs * nChannels);
     int padding = samples.size() - nFrames * nChannels;
 
-    // Divide canais, se necessário
-    vector<short> left(samples.size() / 2), right(samples.size() / 2);
-    if (nChannels > 1) {
-        for (size_t i = 0; i < samples.size() / 2; i++) {
-            left[i] = samples[i * nChannels];
-            right[i] = samples[i * nChannels + 1];
-        }
-    }
+    vector<short> left_samples(samples.size() / 2);
+    vector<short> right_samples(samples.size() / 2);
 
-    // Aplica quantização
     if (quantization) {
         for (auto &sample : samples) {
-            sample >>= q; // Remove os bits menos significativos
+            sample >>= q; // Remove the q least significant bits
         }
     }
 
-    // Inicializa vetores
-    vector<int> m_vector, valuesToBeEncoded;
+    if (nChannels > 1) {
+        for (size_t i = 0; i < samples.size() / 2; ++i) {
+            left_samples[i] = samples[i * nChannels];
+            right_samples[i] = samples[i * nChannels + 1];
+        }
+    }
 
-    // Codifica os valores com predição
-    auto encodeValues = [&](const vector<short> &samples) {
-        for (size_t i = 0; i < samples.size(); i++) {
-            int diff = (i >= 3) ? samples[i] - predict(samples[i - 1], samples[i - 2], samples[i - 3])
-                                : samples[i];
-            valuesToBeEncoded.push_back(diff);
+    vector<int> m_vector;
+    vector<int> valuesToBeEncoded;
 
-            // Atualiza 'm' dinamicamente
-            if (autoMode && i % bs == 0 && i != 0) {
-                int sum = 0;
-                for (size_t j = i - bs; j < i; j++) sum += abs(valuesToBeEncoded[j]);
-                int u = round(sum / bs);
+    auto process_samples = [&](const vector<short>& channel_samples) {
+        for (size_t i = 0; i < channel_samples.size(); ++i) {
+            if (i >= 3) {
+                int difference = channel_samples[i] - predict(channel_samples[i - 1], channel_samples[i - 2], channel_samples[i - 3]);
+                valuesToBeEncoded.push_back(difference);
+            } else {
+                valuesToBeEncoded.push_back(channel_samples[i]);
+            }
+
+            if (i % bs == 0 && i != 0) {
+                int sum = accumulate(valuesToBeEncoded.end() - bs, valuesToBeEncoded.end(), 0, [](int acc, int val) { return acc + abs(val); });
+                int u = round(sum / static_cast<double>(bs));
                 m = calc_m(u);
-                m = max(1, m);
+                m = static_cast<short>(max(static_cast<int>(m), 1));
                 m_vector.push_back(m);
             }
         }
     };
 
-    // Codifica canais
     if (nChannels < 2) {
-        encodeValues(samples);
+        process_samples(samples);
     } else {
-        encodeValues(left);
-        encodeValues(right);
+        process_samples(left_samples);
+        process_samples(right_samples);
     }
 
-    // Gera string codificada
     string encodedString;
     Golomb g;
-    int m_index = 0;
-    for (size_t i = 0; i < valuesToBeEncoded.size(); i++) {
-        if (autoMode && i % bs == 0 && i != 0) m_index++;
-        encodedString += g.encode(valuesToBeEncoded[i], autoMode ? m_vector[m_index] : og);
+
+    if (!autoMode) {
+        for (const auto &value : valuesToBeEncoded) {
+            encodedString += g.encode(value, m);
+        }
+    } else {
+        int m_index = 0;
+        for (size_t i = 0; i < valuesToBeEncoded.size(); ++i) {
+            if (i % bs == 0 && i != 0) m_index++;
+            encodedString += g.encode(valuesToBeEncoded[i], m_vector[m_index]);
+        }
     }
 
-    // Escreve no arquivo de saída
     BitStream bitStream(output, "w");
-    vector<int> bits, encodedBits;
-
-    for (char c : encodedString) encodedBits.push_back(c - '0');
-    int count_zeros = 0;
-
-    while (encodedBits.size() % 8 != 0) {
-        encodedBits.push_back(0);
-        count_zeros++;
+    vector<int> bits;
+    vector<int> encoded_bits(encodedString.begin(), encodedString.end());
+    
+    // Convert encoded string to bits
+    for (auto &bit : encoded_bits) {
+        bit -= '0';
     }
 
-    auto writeBits = [&](int value, int size) {
-        for (int i = size - 1; i >= 0; i--) bits.push_back((value >> i) & 1);
+    int count_zeros = (8 - (encoded_bits.size() % 8)) % 8;
+    encoded_bits.insert(encoded_bits.end(), count_zeros, 0);
+
+    // Prepare header bits
+    auto add_bits = [&](int value, int bit_count) {
+        for (int i = bit_count - 1; i >= 0; --i) {
+            bits.push_back((value >> i) & 1);
+        }
     };
 
-    writeBits(nChannels, 16);
-    writeBits(padding, 16);
-    writeBits(q, 16);
-    writeBits(nFrames, 32);
-    writeBits(bs, 16);
-    writeBits(count_zeros, 16);
-    writeBits(autoMode ? m_vector.size() : 1, 16);
-    for (int m : m_vector) writeBits(m, 16);
-    bits.insert(bits.end(), encodedBits.begin(), encodedBits.end());
+    add_bits(sfhIn.channels(), 16);
+    add_bits(padding, 16);
+    add_bits(q, 16);
+    add_bits(samples.size() / 2, 32);
+    add_bits(bs, 16);
+    add_bits(count_zeros, 16);
+    
+    if (!autoMode) {
+        m_vector.clear();
+        m_vector.push_back(m);
+    }
+    add_bits(m_vector.size(), 16);
+    
+    for (const auto &m_value : m_vector) {
+        add_bits(m_value, 16);
+    }
 
+    bits.insert(bits.end(), encoded_bits.begin(), encoded_bits.end());
     bitStream.writeBits(bits);
     bitStream.close();
 
-    // Exibe tempo decorrido
+    // End the timer
     clock_t end = clock();
-    cout << "Tempo de execução: " << double(end - start) / CLOCKS_PER_SEC * 1000 << " ms\n";
+    double elapsed_secs = double(end - start) / CLOCKS_PER_SEC * 1000;
+    cout << "Execution time: " << elapsed_secs << " ms" << endl;
 
     return 0;
 }
