@@ -17,5 +17,8 @@ GolombDecoder: $(PART2_DIR)/GolombDecoder.cpp $(PART1_DIR)/BitStream.h $(PART2_D
 AudioCodec: AudioCodec.cpp $(PART1_DIR)/BitStream.h $(PART2_DIR)/Golomb.h
 	$(CXX) $(CXXFLAGS) -o AudioCodec AudioCodec.cpp -lsndfile -I$(PART1_DIR) -I$(PART2_DIR)
 
+run: $(TARGETS)
+	./AudioCodec
+
 clean:
 	rm -f $(TARGETS) *.bin *.txt *.o output.wav
