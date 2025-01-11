@@ -102,7 +102,6 @@ int lossy_encoder(std::ofstream &loe, int idx) {
                 std::cerr << "Error: Could not calculate SNR for file: " << decodedFile << "\n";
                 snrs.push_back(-1.0); // Use a placeholder for failed SNR
             } else {
-                std::cerr << "SNR calculated for: " << decodedFile << " -> " << snr << " dB\n";
                 snrs.push_back(snr);
             }
 
@@ -123,6 +122,7 @@ int lossy_encoder(std::ofstream &loe, int idx) {
 
 int lossless_encoder(std::ofstream &lle, int idx) {
     std::vector<std::string> times, sizes;
+    std::vector<double> snrs;
 
     lle << "Testing with fixed M values (128, 256, 512, 1024, 2048)\n";
     for (const auto &audio : AUDIO_FILES) {
@@ -143,11 +143,32 @@ int lossless_encoder(std::ofstream &lle, int idx) {
             sizes.push_back(std::string(buffer));
             pclose(pipe);
 
+            // Decode and calculate SNR
+            std::stringstream decodeCmd;
+            decodeCmd << "./GolombDecoder " << idx << " " << idx << ".wav";
+            system(decodeCmd.str().c_str());
+
+            std::string decodedFile = std::to_string(idx) + ".wav";
+            double snr = calculateSNR(audio, decodedFile);
+            if (snr == -1.0) {
+                std::cerr << "Error: Could not calculate SNR for file: " << decodedFile << "\n";
+                snrs.push_back(-1.0); // Use a placeholder for failed SNR
+            } else {
+                snrs.push_back(snr);
+            }
+
+            // Remove decoded file after SNR calculation
+            std::stringstream rmCmd;
+            rmCmd << "rm -f " << decodedFile;
+            system(rmCmd.str().c_str());
+
             idx++;
         }
-        dump_stats(lle, times, sizes);
+        // Dump all results including SNRs
+        dump_stats(lle, times, sizes, snrs);
         times.clear();
         sizes.clear();
+        snrs.clear();
     }
 
     lle << "\nAuto M and different block sizes (128, 512, 1024, 2048, 16384)\n";
@@ -169,11 +190,32 @@ int lossless_encoder(std::ofstream &lle, int idx) {
             sizes.push_back(std::string(buffer));
             pclose(pipe);
 
+            // Decode and calculate SNR for auto M
+            std::stringstream decodeCmd;
+            decodeCmd << "./GolombDecoder " << idx << " " << idx << ".wav";
+            system(decodeCmd.str().c_str());
+
+            std::string decodedFile = std::to_string(idx) + ".wav";
+            double snr = calculateSNR(audio, decodedFile);
+            if (snr == -1.0) {
+                std::cerr << "Error: Could not calculate SNR for file: " << decodedFile << "\n";
+                snrs.push_back(-1.0); // Use a placeholder for failed SNR
+            } else {
+                snrs.push_back(snr);
+            }
+
+            // Remove decoded file after SNR calculation
+            std::stringstream rmCmd;
+            rmCmd << "rm -f " << decodedFile;
+            system(rmCmd.str().c_str());
+
             idx++;
         }
-        dump_stats(lle, times, sizes);
+        // Dump all results including SNRs
+        dump_stats(lle, times, sizes, snrs);
         times.clear();
         sizes.clear();
+        snrs.clear();
     }
     return idx;
 }
