@@ -3,12 +3,11 @@
 
 #include <fstream>
 #include <string>
-#include <stdexcept>
 #include <cstdint>
 
 class BitStream {
 public:
-    enum Mode { Write, Read };
+    enum Mode { Read, Write };
 
     BitStream(const std::string& filename, Mode mode);
     ~BitStream();
@@ -19,13 +18,15 @@ public:
     void writeBits(uint32_t value, int bitCount);
     uint32_t readBits(int bitCount);
 
+    void flush(); // Moved to public
+
 private:
     std::fstream file;
     Mode mode;
     uint8_t buffer;
     int bitPos;
 
-    void flush();
+    void writeBuffer();
 };
 
 #endif // BITSTREAM_H

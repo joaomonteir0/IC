@@ -1,18 +1,26 @@
-#ifndef LOSSLESS_IMAGE_CODEC_H
-#define LOSSLESS_IMAGE_CODEC_H
+#ifndef LOSSLESSIMAGECODEC_H
+#define LOSSLESSIMAGECODEC_H
 
 #include <opencv2/opencv.hpp>
-#include <string>
+#include "Golomb.h"
+#include "BitStream.h"
+#include "Predictors.h"
+#include <vector>
 
 class LosslessImageCodec {
 public:
-    LosslessImageCodec(int golombM);
-    void encode(const cv::Mat& image, const std::string& outputFile);
-    cv::Mat decode(const std::string& inputFile);
+    explicit LosslessImageCodec(int golombM);
+    void encode(const cv::Mat& image, const std::string& outputFile, Predictors::Standards predictorType);
+    cv::Mat decode(const std::string& inputFile, Predictors::Standards predictorType);
 
 private:
-    int m; // Golomb parameter
-    int predict(int a, int b, int c);
+    int m;
+    Predictors predictors;
+
+    int mapToNonNegative(int n);
+    int mapToSigned(int n);
+    std::vector<std::vector<int>> calculateResiduals(const cv::Mat& image, Predictors::Standards standard);
+    cv::Mat reconstructImage(const std::vector<std::vector<int>>& residuals, Predictors::Standards standard);
 };
 
-#endif // LOSSLESS_IMAGE_CODEC_H
+#endif // LOSSLESSIMAGECODEC_H
