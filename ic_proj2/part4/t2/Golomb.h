@@ -5,13 +5,13 @@
 
 class Golomb {
 public:
-    Golomb(int m, bool useInterleaving = false);
-    void encode(int number, BitStream& bitStream);
+    explicit Golomb(int m);
+    void encode(BitStream& bitStream, int value);
     int decode(BitStream& bitStream);
 
 private:
-    int m; // Golomb parameter
-    bool useInterleaving; // Whether to use interleaving for negative numbers
+    int m;
+    int calcUnary(int value);
 };
 
-#endif // GOLOMB_H
+#endif

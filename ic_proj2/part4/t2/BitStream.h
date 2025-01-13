@@ -2,31 +2,28 @@
 #define BITSTREAM_H
 
 #include <fstream>
-#include <string>
 #include <cstdint>
 
 class BitStream {
 public:
-    enum Mode { Read, Write };
+    enum Mode { READ, WRITE };
 
     BitStream(const std::string& filename, Mode mode);
     ~BitStream();
 
-    void writeBit(bool bit);
-    bool readBit();
+    void writeBits(uint32_t value, int numBits);
+    uint32_t readBits(int numBits);
 
-    void writeBits(uint32_t value, int bitCount);
-    uint32_t readBits(int bitCount);
-
-    void flush(); // Moved to public
+    void close();
+    bool eof() const;
 
 private:
     std::fstream file;
-    Mode mode;
     uint8_t buffer;
     int bitPos;
+    Mode mode;
 
-    void writeBuffer();
+    void flushBuffer();
 };
 
-#endif // BITSTREAM_H
+#endif

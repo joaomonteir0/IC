@@ -1,38 +1,30 @@
 #include "Golomb.h"
 #include <cmath>
-#include <iostream>
 
-Golomb::Golomb(int m, bool useInterleaving) : m(m), useInterleaving(useInterleaving) {}
+Golomb::Golomb(int m) : m(m) {}
 
-void Golomb::encode(int number, BitStream& bitStream) {
-    int quotient = std::abs(number) / m;
-    int remainder = std::abs(number) % m;
+void Golomb::encode(BitStream& bitStream, int value) {
+    int q = value / m;
+    int r = value % m;
 
-    // Unary code for quotient
-    for (int i = 0; i < quotient; ++i) {
-        bitStream.writeBit(1);
-    }
-    bitStream.writeBit(0);
+    // Unary encoding of q
+    for (int i = 0; i < q; ++i) bitStream.writeBits(1, 1);
+    bitStream.writeBits(0, 1);
 
-    // Binary code for remainder
-    int remainderBits = std::ceil(std::log2(m));
-    bitStream.writeBits(remainder, remainderBits);
+    // Binary encoding of r
+    int numBits = static_cast<int>(std::ceil(std::log2(m)));
+    bitStream.writeBits(r, numBits);
 }
 
 int Golomb::decode(BitStream& bitStream) {
-    // Decode unary code for quotient
-    int quotient = 0;
-    while (bitStream.readBit() == 1) {
-        ++quotient;
-    }
+    int q = 0;
 
-    // Decode binary code for remainder
-    int remainderBits = std::ceil(std::log2(m));
-    int remainder = bitStream.readBits(remainderBits);
+    // Decode unary part
+    while (bitStream.readBits(1) == 1) ++q;
 
-    // Combine quotient and remainder
-    int decodedNumber = quotient * m + remainder;
+    // Decode binary part
+    int numBits = static_cast<int>(std::ceil(std::log2(m)));
+    int r = bitStream.readBits(numBits);
 
-    // If interleaving is enabled, reverse the mapping for negative numbers
-    return decodedNumber;
+    return q * m + r;
 }

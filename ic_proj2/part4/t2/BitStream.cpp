@@ -1,59 +1,52 @@
 #include "BitStream.h"
+#include <iostream>
+#include <stdexcept>
 
-BitStream::BitStream(const std::string& filename, Mode mode) : mode(mode), buffer(0), bitPos(0) {
-    if (mode == Write) {
+BitStream::BitStream(const std::string& filename, Mode mode) : buffer(0), bitPos(0), mode(mode) {
+    if (mode == WRITE)
         file.open(filename, std::ios::binary | std::ios::out);
-    } else {
+    else
         file.open(filename, std::ios::binary | std::ios::in);
-    }
-    if (!file.is_open()) {
-        throw std::runtime_error("Failed to open file");
-    }
+
+    if (!file.is_open()) throw std::ios_base::failure("Failed to open file");
 }
 
 BitStream::~BitStream() {
-    if (mode == Write && bitPos > 0) {
-        flush();
-    }
+    if (mode == WRITE && bitPos > 0) flushBuffer();
     file.close();
 }
 
-void BitStream::writeBit(bool bit) {
-    if (bit) {
-        buffer |= (1 << (7 - bitPos));
-    }
-    bitPos++;
-    if (bitPos == 8) {
-        flush();
+void BitStream::writeBits(uint32_t value, int numBits) {
+    for (int i = numBits - 1; i >= 0; --i) {
+        buffer = (buffer << 1) | ((value >> i) & 1);
+        bitPos++;
+        if (bitPos == 8) flushBuffer();
     }
 }
 
-bool BitStream::readBit() {
-    if (bitPos == 0) {
-        file.read(reinterpret_cast<char*>(&buffer), 1);
-        if (file.eof()) throw std::runtime_error("End of file reached");
+uint32_t BitStream::readBits(int numBits) {
+    uint32_t result = 0;
+    for (int i = 0; i < numBits; ++i) {
+        if (bitPos == 0) {
+            file.read(reinterpret_cast<char*>(&buffer), 1);
+            if (file.eof()) throw std::ios_base::failure("End of file reached");
+            bitPos = 8;
+        }
+        result = (result << 1) | ((buffer >> (bitPos - 1)) & 1);
+        bitPos--;
     }
-    bool bit = (buffer >> (7 - bitPos)) & 1;
-    bitPos = (bitPos + 1) % 8;
-    return bit;
+    return result;
 }
 
-void BitStream::writeBits(uint32_t value, int bitCount) {
-    for (int i = bitCount - 1; i >= 0; --i) {
-        writeBit((value >> i) & 1);
+void BitStream::flushBuffer() {
+    if (bitPos > 0) {
+        buffer <<= (8 - bitPos);
+        file.write(reinterpret_cast<char*>(&buffer), 1);
+        buffer = 0;
+        bitPos = 0;
     }
 }
 
-uint32_t BitStream::readBits(int bitCount) {
-    uint32_t value = 0;
-    for (int i = 0; i < bitCount; ++i) {
-        value = (value << 1) | readBit();
-    }
-    return value;
-}
+void BitStream::close() { file.close(); }
 
-void BitStream::flush() {
-    file.write(reinterpret_cast<char*>(&buffer), 1);
-    buffer = 0;
-    bitPos = 0;
-}
+bool BitStream::eof() const { return file.eof(); }
