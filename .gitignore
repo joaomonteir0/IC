@@ -1,5 +1,6 @@
 # Ignore object files
 *.o
+*.bin
 
 # Ignore executáveis gerados
 AudioEncoder
@@ -15,3 +16,4 @@ Thumbs.db
 *.bak
 
 .vscode
+ic_proj2/part4/t2/teste2_encode.bin
