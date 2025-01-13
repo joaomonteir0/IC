@@ -1,18 +1,18 @@
-CXX = g++
-CXXFLAGS = -std=c++17 -Wall -O2
+CC = g++
+CFLAGS = -Wall -g -std=c++17 `pkg-config --cflags opencv4`
+LDFLAGS = `pkg-config --libs opencv4`
 
-SOURCES = BitStream.cpp Golomb.cpp VideoCoder.cpp main.cpp
-OBJECTS = $(SOURCES:.cpp=.o)
+SRCS = main.cpp videoCoder.cpp BitStream.cpp Golomb.cpp Predictors.cpp
+OBJS = $(SRCS:.cpp=.o)
+TARGET = encode
 
-TARGETS = encode
+all: $(TARGET)
 
-all: $(TARGETS)
-
-encode: $(OBJECTS)
-	$(CXX) $(CXXFLAGS) -o encode $(OBJECTS)
+$(TARGET): $(OBJS)
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
 %.o: %.cpp
-	$(CXX) $(CXXFLAGS) -c $<
+	$(CC) $(CFLAGS) -c $< -o $@
 
 clean:
-	rm -f *.o $(TARGETS)
+	rm -f $(OBJS) $(TARGET) *.bin *.mp4

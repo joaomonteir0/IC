@@ -16,4 +16,6 @@ Thumbs.db
 *.bak
 
 .vscode
-ic_proj2/part4/t2/teste2_encode.bin
+ic_proj2/part4/t2/*.bin
+ic_proj2/part4/t2/*.y4m
+ic_proj2/part4/t2/*.mp4

@@ -4,7 +4,7 @@
 
 int main(int argc, char **argv) {
     if (argc < 5) {
-        std::cerr << "Usage: " << argv[0] << " <encode/decode> <input_file> <output_file> <predictor_type>\n";
+        std::cerr << "Usage: " << argv[0] << " <encode/decode> <input_image> <output.bin> <predictor_type (0-5)>\n";
         return 1;
     }
 

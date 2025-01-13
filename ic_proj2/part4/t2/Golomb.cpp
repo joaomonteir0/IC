@@ -3,28 +3,39 @@
 
 Golomb::Golomb(int m) : m(m) {}
 
-void Golomb::encode(BitStream& bitStream, int value) {
-    int q = value / m;
-    int r = value % m;
+void Golomb::encode(BitStream &stream, int value) {
+    int quotient = value / m;
+    int remainder = value % m;
 
-    // Unary encoding of q
-    for (int i = 0; i < q; ++i) bitStream.writeBits(1, 1);
-    bitStream.writeBits(0, 1);
+    for (int i = 0; i < quotient; i++) {
+        stream.writeBit(1);
+    }
+    stream.writeBit(0);
 
-    // Binary encoding of r
-    int numBits = static_cast<int>(std::ceil(std::log2(m)));
-    bitStream.writeBits(r, numBits);
+    int b = std::floor(std::log2(m));
+    int cutoff = (1 << (b + 1)) - m;
+
+    if (remainder < cutoff) {
+        stream.writeBits(remainder, b);
+    } else {
+        stream.writeBits(remainder + cutoff, b + 1);
+    }
 }
 
-int Golomb::decode(BitStream& bitStream) {
-    int q = 0;
+int Golomb::decode(BitStream &stream) {
+    int quotient = 0;
 
-    // Decode unary part
-    while (bitStream.readBits(1) == 1) ++q;
+    while (stream.readBit() == 1) {
+        quotient++;
+    }
 
-    // Decode binary part
-    int numBits = static_cast<int>(std::ceil(std::log2(m)));
-    int r = bitStream.readBits(numBits);
+    int b = std::floor(std::log2(m));
+    int cutoff = (1 << (b + 1)) - m;
+    int remainder = stream.readBits(b);
 
-    return q * m + r;
+    if (remainder >= cutoff) {
+        remainder = (remainder << 1) + stream.readBits(1) - cutoff;
+    }
+
+    return quotient * m + remainder;
 }
