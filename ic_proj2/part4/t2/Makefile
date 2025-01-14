@@ -10,7 +10,7 @@ LDFLAGS = `pkg-config --libs opencv4`
 # Source Files
 SRCS = main.cpp videoCoder.cpp BitStream.cpp Golomb.cpp Predictors.cpp
 OBJS = $(SRCS:.cpp=.o)
-TARGET = encode
+TARGET = main
 
 # Tester Program
 TESTER_SRCS = videoTester.cpp BitStream.cpp

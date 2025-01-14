@@ -5,7 +5,7 @@
 
 class Predictors {
 public:
-    int predictJPEG_LS(int a, int b, int c); // Define as an instance method
+    int predictJPEG_LS(int a, int b, int c); // definido como default
 };
 
 #endif

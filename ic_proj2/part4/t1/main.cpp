@@ -4,7 +4,7 @@
 
 int main(int argc, char **argv) {
     if (argc < 5) {
-        std::cerr << "Usage: " << argv[0] << " <encode/decode> <input_image> <output.bin> <predictor_type (0-5)>\n";
+        std::cerr << "Usage: " << argv[0] << " <encode/decode> <input_image/output.bin> <output.bin/output_image.png> <predictor_type (0-5)>\n";
         return 1;
     }
 
@@ -19,7 +19,7 @@ int main(int argc, char **argv) {
     if (mode == "encode") {
         cv::Mat image = cv::imread(inputFile, cv::IMREAD_COLOR);
         if (image.empty()) {
-            std::cerr << "Error: Could not open input file.\n";
+            std::cerr << "Error opening the file.\n";
             return 1;
         }
 
@@ -31,7 +31,7 @@ int main(int argc, char **argv) {
         cv::imwrite(outputFile, decodedImage);
         std::cout << "Image successfully decoded to " << outputFile << "\n";
     } else {
-        std::cerr << "Invalid mode. Use 'encode' or 'decode'.\n";
+        std::cerr << "Invalid entry\n";
         return 1;
     }
 
