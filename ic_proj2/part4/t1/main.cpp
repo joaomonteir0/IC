@@ -4,7 +4,8 @@
 
 int main(int argc, char **argv) {
     if (argc < 5) {
-        std::cerr << "Usage: " << argv[0] << " <encode/decode> <input_image/output.bin> <output.bin/output_image.png> <predictor_type (0-5)>\n";
+        std::cerr << "Usage: " << argv[0] << " <encode/decode> <input_image.ppm/output.bin> <output.bin/output_image.png> <predictor_type (0-5)>\n";
+        std::cout << "(0)JPEG_PL, \n(1)JPEG_PA, \n(2)JPEG_PAL, \n(3)JPEG_ABC, \n(4)JPEG_MBC, \n(5)JPEG_LS\n";
         return 1;
     }
 
